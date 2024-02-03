@@ -93,12 +93,12 @@ FORTH_SRC = Forth64S/promram.4 \
  ../disk_nmt/ForthSrc/src_FIND_INTERP.4 \
  ../disk_nmt/ForthSrc/TERM/INCLUDE.4 \
  ../disk_nmt/ForthSrc/fstart.4 \
- Forth64S/Meta_x86_64/SRC/gasm64.4 \
+ Forth64S/Meta_x86_64/SRC/gasm64.4th \
  Forth64S/Meta_x86_64/SRC/disgasm.4 \
  Forth64S/Meta_x86_64/SRC/tc.f \
  Forth64S/src/global.4 \
  Forth64S/Meta_x86_64/SRC/mlist.f \
- Forth64S/Meta_x86_64/SRC/LEX.F \
+ Forth64S/Meta_x86_64/SRC/lex.4th \
  Forth64S/MLibs.4 \
  Forth64S/Meta_x86_64/mhead0.f \
  Forth64S/Meta_x86_64/SRC/macroopt.4 
