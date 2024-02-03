@@ -30,7 +30,9 @@
  REQUIRE CO ForthLib\tools\acc.4th CO
  REQUIRE VIEWS_SEARCH ForthLib\tools\defview.4th 
  REQUIRE VIEW ForthLib\tools\view.4th 
+ REQUIRE CODE ForthLib\asm\gasm64.4th
 
+ LASTSTP: fload work\test.4th 
 .( TRY) CR
 .( SEE ABS) CR
 .( ' +  DISA  \ q - quit anyother - continue ) CR
