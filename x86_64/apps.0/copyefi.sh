@@ -1,1 +1,0 @@
-cp ./forth.efi ../../disk_nmt/EFI/BOOT/bootx64.efi
