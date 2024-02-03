@@ -1,0 +1,214 @@
+\ 0 TO MM_SIZE
+REQUIRE DoDTST ~mak/OptTr.f 
+REQUIRE .TOP0 ~mak/DOP.F 
+: DTSTON   ['] DoDTST TO DTST ; IMMEDIATE
+: DTSTOFF   ['] DROP TO DTST ; IMMEDIATE
+: MO_TST_VAL-ON  -1 TO MO_TST_VAL ; IMMEDIATE
+: MO_TST_VAL-OFF $0 TO MO_TST_VAL ; IMMEDIATE
+REQUIRE CASE-INS ~mak/lib/caseins.f 
+CASE-INS ON
+\ REQUIRE REQUIRE_AL Meta_x86_64/SRC/mlist.f 
+ REQUIRE INCLUDED_AL	~mak/lib/THERE/mlist.f 
+
+
+REQUIRE [IF] ~mak/CompIF4.f
+REQUIRE [IFNDEF] ~nn/lib/ifdef.f
+REQUIRE NUMBER? ~mak/lib/fpcnum.f
+REQUIRE [AGAIN] ~mak/lib/twopass.f 
+
+ REQUIRE_AL CODE Meta_x86_64/SRC/gasm64.4 
+
+FLOAD_AL ANSI/arithmetiс.4 
+
+[IFNDEF] UNUSED
+: UNUSED        \ -- u
+( *G Return the number of bytes free in the dictionary.                 )
+\  unused-top here -
+  CODE-LIMIT @  here -  ;
+[THEN]
+
+[IFNDEF] MARKER
+: MARKER ( "<spaces>name" -- ) \ 94 CORE EXT
+  HERE
+  GET-CURRENT ,
+  GET-ORDER DUP , 0 ?DO DUP , @ , LOOP
+  CREATE ,
+  DOES> @ DUP \ ONLY
+  DUP @ SET-CURRENT CELL+
+  DUP @ >R R@ CELLS 2* + 1 CELLS - R@ 0
+  ?DO DUP DUP @ SWAP CELL+ @ OVER ! SWAP 2 CELLS - LOOP
+  DROP R> SET-ORDER
+  DP !
+;
+[THEN]
+
+\- LITERAL : LITERAL LIT, ; IMMEDIATE
+\- ENVIRONMENT? : ENVIRONMENT? 2DROP 0 ;
+
+[IFNDEF] BUFFER:
+: BUFFER:       \ n "name" -- ; [child] -- addr
+\ *G Create a memory buffer called *\fo{name} which is 'n' bytes long.
+\ ** When *\fo{name} is executed the address of the buffer is returned.
+  Create
+    Here Over Allot Swap Erase
+;
+[THEN]
+
+[IFNDEF] SAVE-INPUT
+: SAVE-INPUT    \ -- xn..x1 n
+  source
+  source-id
+  >in @
+  4
+;
+
+: RESTORE-INPUT \ xn..x1 n -- flag
+  DROP
+    >in !  to source-id  source! 0
+;
+[THEN]
+
+[IFNDEF] ACTION-OF
+: ACTION-OF
+   STATE @ IF
+     POSTPONE ['] POSTPONE DEFER@
+   ELSE
+     ' DEFER@
+   THEN ; IMMEDIATE
+[THEN]
+
+[IFNDEF] S\"
+
+: \DO >R OVER = IF DROP R> C, THEN RDROP ;
+
+: S\"PARSE
+'a' 7 \DO
+'b' 8 \DO
+'e' #27 \DO
+'f' #12 \DO
+'l' #10 \DO
+'m' OVER = IF DROP #13 C, #10 C, BREAK
+'n' #10 \DO
+'q' #34 \DO
+'r' #13 \DO
+'t' 9 \DO
+'v' #11 \DO
+'z' 0 \DO
+'"' #34 \DO
+'x' OVER = IF DROP
+   PeekChar >IN 1+! $20 OR '0' - DUP 9 > IF '0' + 'a' - $A + THEN 4 <<
+   PeekChar >IN 1+! $20 OR '0' - DUP 9 > IF '0' + 'a' - $A + THEN OR C, BREAK
+ C,
+;
+
+: S\" ( "ccc<quote>" -- )
+ STATE @ 
+ IF  ['] (S") COMPILE,
+ ELSE HERE
+ THEN
+  HERE  0 C,
+  BEGIN
+    GetChar >IN 1+! OVER '"'   <> AND
+  WHILE    
+	DUP '\' XOR
+	IF	C,
+	ELSE DROP PeekChar >IN 1+! S\"PARSE
+	THEN
+  REPEAT DROP
+  HERE OVER - 1- SWAP C!
+ STATE @ 0= IF COUNT THEN
+
+; IMMEDIATE
+
+
+[THEN]
+
+\- 2LITERAL : 2LITERAL SWAP LIT, LIT, ; IMMEDIATE
+\- 2VARIABLE : 2VARIABLE VARIABLE 0 , ;
+
+[IFNDEF] D.R
+: D.R           \ d n --
+\ *G Output the signed double number 'd' using the current *\fo{BASE},
+\ ** right justified to 'n' characters. Padding is inserted using
+\ ** spaces on the left side.
+  >r  tuck dabs <# #s rot sign #>
+  r> over - spaces type
+;
+[THEN]
+
+[IFNDEF] 2rot
+: 2rot          \ 1 2 3 4 5 6 -- 3 4 5 6 1 2
+\ *G Perform *\fo{ROT} operation on 3 double numbers.
+  2>r 2swap             \ 3 4 1 2 -- ; R: 5 6 --
+  2r> 2swap
+;
+[THEN]
+
+REQUIRE begin-structure ANSI/struct.4 
+
+[IFNDEF] write-line
+: write-line    \ c-addr u fileid -- ior
+  dup>r Write-File  LT 1 r> Write-File  or
+;
+[THEN]
+\- BIN : BIN ;
+
+CODE 0>		( n -- f )
+	test   %rax,%rax
+	setg   %al
+	neg    %al
+	movsbq %al,%rax
+	ret
+END-CODE
+
+: COMPARE COMPARE DUP IF 0< 1 OR THEN ;
+
+
+[IFNDEF] N>R
+: N>R \ xn .. x1 N -- ; R: -- x1 .. xn n
+\ Transfer N items and count to the return stack.
+   DUP                        \ xn .. x1 N N --
+   BEGIN
+      DUP
+   WHILE
+      ROT R> SWAP >R >R      \ xn .. N N -- ; R: .. x1 --
+      1-                      \ xn .. N 'N -- ; R: .. x1 --
+   REPEAT
+   DROP                       \ N -- ; R: x1 .. xn --
+   R> SWAP >R >R
+;
+[THEN]
+
+[IFNDEF] NR>
+: NR> \ -- xn .. x1 N ; R: x1 .. xn N --
+\ Pull N items and count off the return stack.
+   R> R> SWAP >R DUP
+   BEGIN
+      DUP
+   WHILE
+      R> R> SWAP >R -ROT
+      1-
+   REPEAT
+   DROP
+; 
+[THEN]
+
+[IFNDEF] UNESCAPE
+: UNESCAPE \ c-addr1 len1 c-addr2 -- c-addr2 len2
+\ Replace each '%' character in the input string c-addr1 len1 with two '%' characters.
+\ The output is represented by c-addr2 len2.
+\ If you pass a string through UNESCAPE and then SUBSTITUTE, you get the original string.
+   DUP 2SWAP OVER + SWAP ?DO
+     I C@ [CHAR] % = IF
+       [CHAR] % OVER C! 1+
+     THEN
+     I C@ OVER C! 1+
+   LOOP
+   OVER -
+;
+[THEN]
+
+\ FLOAD_AL samples/ans/tester.f
+FLOAD tests/runtests.fth 
+\EOF
+

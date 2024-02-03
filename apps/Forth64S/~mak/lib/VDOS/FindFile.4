@@ -1,0 +1,58 @@
+REQUIRE XAPI_2: lib\WAPI.4
+
+KERNEL32DLL XAPI_2: FindFirstFileA FindFirstFileA
+KERNEL32DLL XAPI_2: FindNextFileA FindNextFileA
+KERNEL32DLL XAPI_1: FindClose FindClose
+
+ REQUIRE { ~mak/locals.f
+
+16 CONSTANT FILE_ATTRIBUTE_DIRECTORY
+
+  0
+  4 -- dwFileAttributes
+  8 -- ftCreationTime
+  8 -- ftLastAccessTime
+  8 -- ftLastWriteTime
+  4 -- nFileSizeHigh
+  4 -- nFileSizeLow
+  4 -- dwReserved0
+  4 -- dwReserved1
+260 -- cFileName          \ [ MAX_PATH ]
+ 14 -- cAlternateFileName \ [ 14 ]
+100 + CONSTANT /WIN32_FIND_DATA
+
+CREATE FFBLKBUF /WIN32_FIND_DATA ALLOT 0x7777 ,
+FFBLKBUF  /WIN32_FIND_DATA ERASE 
+: ff_name ( buf -- zadr  )
+ cFileName  EXIT
+\ cAlternateFileName EXIT
+ DUP cAlternateFileName DUP C@ 0=
+ IF DROP DUP cFileName THEN NIP
+ ;
+
+
+ : ff_attrib dwFileAttributes ;
+ : FA_DIREC FILE_ATTRIBUTE_DIRECTORY ;
+
+-1 VALUE IDDIR
+
+: FIRSTFILE   { addr u -- flg }
+  IDDIR DUP -1 <> IF DUP  FindClose DROP THEN  DROP
+  0 addr u + C!
+  FFBLKBUF addr FindFirstFileA TO IDDIR
+  IDDIR -1 =
+;
+
+: NEXTFILE ( -- flg )
+  FFBLKBUF IDDIR FindNextFileA \ 0=
+;
+
+: GET-DIR-FILE-NAME ( -- addr len )
+  FFBLKBUF ff_name ASCIIZ> \ $C UMIN
+ ;
+
+: GET-DIR-ATTR ( -- u )
+  FFBLKBUF  dwFileAttributes @ ;
+
+: GET-DIR-SIZE ( -- u )
+  FFBLKBUF  nFileSizeLow @ ;

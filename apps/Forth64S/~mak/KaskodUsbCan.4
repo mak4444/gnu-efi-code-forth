@@ -1,0 +1,460 @@
+(
+    USB-CAN 2
+    Author: Budenshteyn G.E., Maksimov M.O, Kaskod-Elektro LLC.
+)
+
+[IFNDEF] BREAK : BREAK  POSTPONE EXIT POSTPONE THEN ; IMMEDIATE [THEN]
+
+
+WINAPI:  UsbCan_Open			    usbcan2.dll
+WINAPI:  UsbCan_Close			    usbcan2.dll
+WINAPI:  UsbCan_GetReceived		    usbcan2.dll
+WINAPI:  UsbCan_GetSend			    usbcan2.dll
+WINAPI:  UsbCan_Init			    usbcan2.dll
+WINAPI:  UsbCan_InitBuffersSize		usbcan2.dll
+WINAPI:  UsbCan_ResetReceiveBuf		usbcan2.dll
+WINAPI:  UsbCan_ResetSendBuf		usbcan2.dll
+WINAPI:  UsbCan_SetReceiveBuf		usbcan2.dll
+WINAPI:  UsbCan_SetSendBuf		    usbcan2.dll
+WINAPI:  UsbCan_StartRTC		    usbcan2.dll
+WINAPI:  UsbCan_StartReceive		usbcan2.dll
+WINAPI:  UsbCan_StartSend		    usbcan2.dll
+WINAPI:  UsbCan_StopReceive		    usbcan2.dll
+WINAPI:  UsbCan_StopSend		    usbcan2.dll
+WINAPI:  UsbCan_Wait			    usbcan2.dll
+
+
+32  CONSTANT    USBCAN_MSGOBJ_MAX
+
+\ Values to set USBCAN_MSG.Flags field
+8   CONSTANT    USBCAN_DIR_SEND                 
+0   CONSTANT    USBCAN_DIR_RECEIVE
+4   CONSTANT    USBCAN_ID_EXT                   
+0   CONSTANT    USBCAN_ID_STD                   
+
+
+: USBCAN_SET_DATA_SIZE      ( n -- n' )
+    4 LSHIFT
+;
+
+
+
+ S" CAN.LOG"  W/O CREATE-FILE-SHARED THROW VALUE CAN-STDOUT
+ 
+
+: CAN-LOG-SW
+  H-STDOUT    CAN-STDOUT
+ TO    H-STDOUT TO  CAN-STDOUT
+
+;
+
+\ CANLOG?
+\ IF	H-STDOUT >R  CAN-STDOUT TO H-STDOUT
+\	." P=" DUP H.
+\	R> TO  H-STDOUT
+\ THEN
+
+
+\
+\ Driver information
+\
+0
+4   FIELD       UsbCanInfo_DriverVersion            \  Driver version
+4   FIELD       UsbCanInfo_VendorID                 \  Manufacturer ID
+4   FIELD       UsbCanInfo_ProductID                \  Product ID
+4   FIELD       UsbCanInfo_DeviceVersion            \  USB-CAN adapter version 
+4   FIELD       UsbCanInfo_BoardRamSize             \  USB-CAN adapter on board RAM size
+CONSTANT USBCAN_INFO_SIZE
+
+CREATE USBCAN_INFO USBCAN_INFO_SIZE ALLOT
+
+
+\
+\ User buffers sizes fro received and send messages
+\
+0
+4   FIELD                         UsbCanBuffers_ReceiveBufSize
+4   USBCAN_MSGOBJ_MAX * FIELD     UsbCanBuffers_SendBufSize
+CONSTANT USBCAN_BUFFERS_SIZE
+
+CREATE USBCAN_BUFFERS USBCAN_BUFFERS_SIZE ALLOT
+USBCAN_BUFFERS USBCAN_BUFFERS_SIZE 0 FILL
+
+
+
+\ 
+\  CAN message structure
+\ 
+0
+2   FIELD       UsbCanMsg_MsgObj                    \  Message Object number (0..14)
+4   FIELD       UsbCanMsg_Arbitr                    \  Arbitration
+2   FIELD       UsbCanMsg_Flags                     \  Flags bits: 0   - if set to '1' there was message lost
+                                                    \              2   - message arbitration type Ext=1, Std=0
+                                                    \              3   - direction transmit=1, receive=0
+                                                    \              4-7 - data size (0..8)
+8   FIELD       UsbCanMsg_Data                      \  Message data
+2   FIELD       UsbCanMsg_Status                    \  Status register value 
+6   FIELD       UsbCanMsg_Time                      \  Time stamp
+CONSTANT        USBCAN_MSG_SIZE
+
+
+
+0   VALUE       USBCAN_GSMSK_TX
+0   VALUE       USBCAN_GEMSK_TX
+
+0   VALUE       USBCAN_CHANNEL
+
+1   VALUE       USBCAN_MSGOBJ_TX
+2   VALUE       USBCAN_MSGOBJ_RX
+
+1   VALUE       USBCAN_ID_RX
+2   VALUE       USBCAN_ID_TX
+
+
+3000    VALUE   USBCAN_TXMSGNUM
+1100     VALUE   USBCAN_RXMSGNUM
+
+USBCAN_TXMSGNUM USBCAN_MSG_SIZE *   
+        VALUE   USBCAN_TXBUF_SIZE
+
+USBCAN_RXMSGNUM USBCAN_MSG_SIZE *   
+        VALUE   USBCAN_RXBUF_SIZE
+
+CREATE  USBCAN_TXBUF   USBCAN_TXBUF_SIZE ALLOT       
+CREATE  USBCAN_RXBUF   USBCAN_RXBUF_SIZE ALLOT       
+
+USBCAN_TXBUF USBCAN_TXBUF_SIZE 0 FILL
+USBCAN_RXBUF USBCAN_RXBUF_SIZE 0 FILL
+
+
+
+: USBCAN_OPEN                   ( -- err_n )
+    USBCAN_INFO USBCAN_CHANNEL UsbCan_Open NIP NIP
+
+\        CR ." Ram size       = " USBCAN_INFO UsbCanInfo_BoardRamSize	@ H.
+\        CR ." Driver version = " USBCAN_INFO UsbCanInfo_DriverVersion	@ H.
+\        CR ." Vendor ID      = " USBCAN_INFO UsbCanInfo_VendorID		@ H.
+\        CR ." Product ID     = " USBCAN_INFO UsbCanInfo_ProductID		@ H.
+\        CR ." Device version = " USBCAN_INFO UsbCanInfo_DeviceVersion	@ H.
+
+    DUP 
+    IF      CR ." USBCAN: Error Open=" H. CR
+    THEN
+;
+
+
+: USBCAN_CLOSE                  ( -- err_n )
+    USBCAN_CHANNEL UsbCan_Close NIP
+;
+
+
+\ Инициализация 
+: USBCAN_INIT                   ( -- err_n )
+    \ 0x41 - 1 Мбит
+    \ 0x42 - 0.667 Мбит
+    0x34 0x42 USBCAN_GEMSK_TX USBCAN_GSMSK_TX USBCAN_CHANNEL UsbCan_Init NIP NIP NIP NIP NIP  
+    DUP 
+    IF      CR ." USBCAN: Error Init=" H. CR
+    THEN
+;
+
+
+: USBCAN_INIT_BUFFERS_SIZE      ( -- err_n )
+    USBCAN_BUFFERS USBCAN_CHANNEL UsbCan_InitBuffersSize NIP NIP 
+    DUP 
+    IF      CR ." USBCAN: Error InitBuffersSize=" H. CR
+    THEN
+;
+
+
+: USBCAN_SET_SENDBUF            ( adr n -- err_n )
+    SWAP USBCAN_MSGOBJ_TX USBCAN_CHANNEL UsbCan_SetSendBuf NIP NIP NIP NIP
+    DUP 
+    IF      CR ." USBCAN: Error SetSendBuf=" H. CR
+    THEN
+;
+
+
+: USBCAN_SET_RECEIVEBUF         ( adr n -- err_n )
+    SWAP USBCAN_CHANNEL UsbCan_SetReceiveBuf NIP NIP NIP
+    DUP 
+    IF      CR ." USBCAN: Error SetReceiveBuf=" H. CR
+    THEN
+;
+
+
+: USBCAN_START_SEND             ( -- err_n )
+    USBCAN_MSGOBJ_TX USBCAN_CHANNEL UsbCan_StartSend NIP NIP
+    DUP 
+    IF      CR ." USBCAN: Error StartSend=" H. CR
+    THEN
+;
+
+
+\
+\ Прием n сообщений в общий приемный буфер со стандартным идентификатором
+\ Маска на прием = -1 (принимать все)
+\
+: USBCAN_START_RECEIVE_STD      ( n -- err_n )
+    >R 0 0 0 USBCAN_ID_STD -1 USBCAN_ID_RX R> USBCAN_MSGOBJ_RX USBCAN_CHANNEL UsbCan_StartReceive NIP NIP NIP NIP NIP NIP NIP NIP NIP
+    DUP 
+    IF      CR ." USBCAN: Error StartReceiveStd=" H. CR
+    THEN
+;
+
+
+\
+\ Прием n сообщений в общий приемный буфер с расширенным идентификатором
+\ Маска на прием = -1 (принимать все)
+\
+: USBCAN_START_RECEIVE_EXT      ( n -- err_n )
+    >R 0 0 0 USBCAN_ID_EXT -1 USBCAN_ID_RX R> USBCAN_MSGOBJ_RX USBCAN_CHANNEL UsbCan_StartReceive NIP NIP NIP NIP NIP NIP NIP NIP NIP
+    DUP 
+    IF      CR ." USBCAN: Error StartReceiveExt=" H. CR
+    THEN
+;
+
+
+VARIABLE    #USBCAN_RECEIVED        
+0   VALUE   #USBCAN_READ_RECEIVED
+
+\
+\ Возвращает число принятых сообщений указанным msgobj
+\
+: USBCAN_GET_RECEIVED_MSGOBJ     ( -- err_n )
+    0 #USBCAN_RECEIVED !
+    #USBCAN_RECEIVED USBCAN_MSGOBJ_RX USBCAN_CHANNEL UsbCan_GetReceived NIP NIP NIP 
+    DUP 
+    IF      CR ." USBCAN: Error GetReceived=" H. CR
+    THEN
+;
+
+
+\
+\ Возвращает число принятых сообщений в общем буфере (для циклического приема)
+\
+: USBCAN_GET_RECEIVED           ( -- err_n )
+    0 #USBCAN_RECEIVED !
+    #USBCAN_RECEIVED 0 USBCAN_CHANNEL UsbCan_GetReceived NIP NIP NIP 
+    DUP 
+    IF      CR ." USBCAN: Error GetReceived=" H. CR
+    THEN
+;
+
+
+
+\
+\ n-циклов ожидания по 100 мс
+\
+: USBCAN_WAIT_RECEIVE           ( n -- f )
+    FALSE SWAP
+    0 DO
+        USBCAN_DIR_RECEIVE 10 USBCAN_MSGOBJ_RX USBCAN_CHANNEL UsbCan_Wait NIP NIP NIP NIP 0 =   
+        IF      DROP TRUE LEAVE
+        THEN 
+    LOOP
+;                          
+
+
+\
+\ n-циклов ожидания по 100 мс
+\
+: USBCAN_WAIT_SEND              ( n -- f )
+    FALSE SWAP
+    0 DO
+        USBCAN_DIR_SEND 100 USBCAN_MSGOBJ_TX USBCAN_CHANNEL UsbCan_Wait NIP NIP NIP NIP 0 =   
+        IF      DROP TRUE LEAVE
+        THEN
+    LOOP
+;
+
+
+: USBCAN_STOP_RECEIVE           ( -- err_n )
+    USBCAN_MSGOBJ_RX USBCAN_CHANNEL UsbCan_StopReceive NIP NIP
+    DUP 
+    IF      CR ." USBCAN: Error StopReceive=" H. CR
+    THEN
+;
+
+
+: USBCAN_STOP_SEND              ( -- err_n )
+    USBCAN_MSGOBJ_TX USBCAN_CHANNEL UsbCan_StopSend NIP NIP
+    DUP 
+    IF      CR ." USBCAN: Error StopSend=" H. CR
+    THEN
+;
+
+
+: USBCAN_RESET_RECEIVEBUF       ( -- err_n )
+    USBCAN_CHANNEL UsbCan_ResetReceiveBuf NIP
+    DUP 
+    IF      CR ." USBCAN: Error ResetReceiveBuf=" H. CR
+    THEN
+;
+
+
+: USBCAN_RESET_SENDBUF         ( -- err_n )
+    USBCAN_MSGOBJ_TX USBCAN_CHANNEL UsbCan_ResetSendBuf NIP NIP
+    DUP 
+    IF      CR ." USBCAN: Error ResetSendBuf=" H. CR
+    THEN
+;
+
+
+
+            
+: USBCAN_MSG_DUMP       ( adrmsg -- )
+    CR ." MsgObj =" DUP UsbCanMsg_MsgObj @ 0xFFFF AND H.     
+    CR ."     ID =" DUP UsbCanMsg_Arbitr @ H.     
+    CR ."  Flags =" DUP UsbCanMsg_Flags  @ 0xFFFF AND H.     
+    8 0 DO
+        CR ."  Data" I . ." =" DUP UsbCanMsg_Data I + @ 0xFF AND H.     
+    LOOP
+    DROP
+;            
+            
+
+
+
+COMMENT:
+: USBCAN_STOP_SEND_RECEIVE      ( -- f )
+    USBCAN_STOP_RECEIVE         IF TRUE USBCAN_CLOSE DROP BREAK
+    USBCAN_STOP_SEND            IF TRUE USBCAN_CLOSE DROP BREAK
+    USBCAN_RESET_RECEIVEBUF     IF TRUE USBCAN_CLOSE DROP BREAK
+    USBCAN_RESET_SENDBUF        IF TRUE USBCAN_CLOSE DROP BREAK
+;
+COMMENT;
+
+
+0   VALUE   USBCAN_RXBUF_PTR
+0   VALUE   USBCAN_RBUF_PTR
+
+
+\
+\ Прием n сообщений в общий приемный буфер со стандартным идентификатором
+\ Маска на прием = -1 (принимать все)
+\ Число сообщений = -1 циклический прием
+\
+: USBCAN_START_RECEIVE_CYCLE    ( -- err_n )
+
+    \ USBCAN_STOP_RECEIVE         DUP IF EXIT ELSE DROP THEN
+    \ USBCAN_RESET_RECEIVEBUF     DUP IF EXIT ELSE DROP THEN
+
+    USBCAN_RXBUF USBCAN_RXBUF_SIZE USBCAN_SET_RECEIVEBUF IF TRUE USBCAN_CLOSE DROP BREAK
+
+    0 0 0 USBCAN_ID_STD -1 USBCAN_ID_RX -1 USBCAN_MSGOBJ_RX USBCAN_CHANNEL UsbCan_StartReceive NIP NIP NIP NIP NIP NIP NIP NIP NIP
+    DUP 
+    IF      CR ." USBCAN: Error StartReceive(Cycle)=" H. CR
+    THEN
+
+    USBCAN_RXBUF TO USBCAN_RXBUF_PTR
+    0 TO #USBCAN_READ_RECEIVED
+;
+
+
+
+\
+\ Читает очередное сообщение из циклического буфера
+\ Если есть сообщение, то возвращает  -- data_l data_h FALSE
+\                              иначе  -- TRUE
+\
+: USBCAN_READ_MSG       ( -- data_l data_h f )
+
+    USBCAN_GET_RECEIVED IF TRUE BREAK
+
+    #USBCAN_RECEIVED @ DUP #USBCAN_READ_RECEIVED <> SWAP 0 <> AND
+    IF      USBCAN_RXBUF_PTR UsbCanMsg_Data @       \ data_l
+            USBCAN_RXBUF_PTR UsbCanMsg_Data 4 + @   \ data_h
+
+            USBCAN_RXBUF_PTR UsbCanMsg_Flags @ 0xFFFF AND 0x80 <> 
+            IF cr ." !! msg flags !!!" THEN
+
+            USBCAN_RXBUF_PTR USBCAN_MSG_SIZE + TO USBCAN_RXBUF_PTR
+            #USBCAN_READ_RECEIVED 1+ TO #USBCAN_READ_RECEIVED
+
+            \ Если указатель дошел до конца буфера, то переключаем на начало
+            USBCAN_RXBUF_PTR USBCAN_RXBUF USBCAN_RXBUF_SIZE + =
+            IF      USBCAN_RXBUF TO USBCAN_RXBUF_PTR
+            THEN
+
+            FALSE EXIT
+    THEN
+
+    \ Проверка на переполнение
+    USBCAN_DIR_RECEIVE 10 0 USBCAN_CHANNEL UsbCan_Wait NIP NIP NIP NIP 0 =   
+    IF      CR ." USBCAN: Error OVERFLOW" CR 
+            TRUE EXIT
+    THEN 
+
+    cr ." !!!!!!!HERE!!!!!!!!!!!" cr
+    TRUE
+;
+
+    
+USBCAN_TXBUF VALUE USBCAN_LAST_MSG
+
+0 [IF]
+	USBCAN_MSGOBJ_TX 1-	USBCAN_LAST_MSG UsbCanMsg_MsgObj   W!
+	USBCAN_ID_TX       	USBCAN_LAST_MSG UsbCanMsg_Arbitr   !
+	2                  	USBCAN_LAST_MSG UsbCanMsg_Time     !
+	0                  	USBCAN_LAST_MSG UsbCanMsg_Time 4 + W!
+[THEN]
+
+0 VALUE USBCAN_COUNT
+: MSG_SIZE- USBCAN_COUNT 7 AND ;
+
+
+: USBCAN_SAND_BUF      ( -- f )
+
+	USBCAN_COUNT 0= IF FALSE BREAK
+    \ cr ." stop and reset send buffer"
+    USBCAN_STOP_SEND     IF TRUE BREAK
+    USBCAN_RESET_SENDBUF IF TRUE BREAK
+
+\     cr ." usbcan set tx buffer="
+    USBCAN_TXBUF USBCAN_LAST_MSG OVER -   USBCAN_COUNT 7 AND IF  USBCAN_MSG_SIZE + THEN
+\      ." <US " dup  USBCAN_MSG_SIZE /  h.
+ USBCAN_SET_SENDBUF IF TRUE BREAK
+
+    \ cr ." usbcan start send"
+    USBCAN_START_SEND IF TRUE BREAK
+
+	0 TO USBCAN_COUNT
+	USBCAN_TXBUF TO USBCAN_LAST_MSG
+
+
+    \ cr ." wait send"
+    50 USBCAN_WAIT_SEND NOT IF TRUE BREAK
+
+	USBCAN_MSGOBJ_TX 1-	USBCAN_LAST_MSG UsbCanMsg_MsgObj   W!
+	USBCAN_ID_TX		USBCAN_LAST_MSG UsbCanMsg_Arbitr   !
+	20			USBCAN_LAST_MSG UsbCanMsg_Time     !
+	0			USBCAN_LAST_MSG UsbCanMsg_Time 4 + W!
+\	." US>"
+    \ cr ." stop and reset send buffer"
+    USBCAN_STOP_SEND            IF TRUE BREAK
+    USBCAN_RESET_SENDBUF        IF TRUE BREAK
+
+    FALSE
+;
+
+
+:  USBCAN_PC!
+
+	USBCAN_LAST_MSG UsbCanMsg_Data  MSG_SIZE- + C!
+	USBCAN_ID_STD MSG_SIZE- 1+ USBCAN_SET_DATA_SIZE OR     USBCAN_LAST_MSG UsbCanMsg_Flags    W!
+
+	USBCAN_COUNT 1+ DUP TO USBCAN_COUNT
+	USBCAN_TXMSGNUM 8 * U<
+	IF	MSG_SIZE- 0=
+		IF	USBCAN_LAST_MSG USBCAN_MSG_SIZE + TO USBCAN_LAST_MSG
+			USBCAN_MSGOBJ_TX 1-	USBCAN_LAST_MSG UsbCanMsg_MsgObj   W!
+			USBCAN_ID_TX		USBCAN_LAST_MSG UsbCanMsg_Arbitr   !
+			3			USBCAN_LAST_MSG UsbCanMsg_Time     !
+			0			USBCAN_LAST_MSG UsbCanMsg_Time 4 + W!
+		THEN
+	ELSE  USBCAN_SAND_BUF DROP
+	THEN
+	
+;
+

@@ -1,0 +1,5 @@
+: #define
+  HEADER
+  CONSTANT-CODE COMPILE,
+  0 PARSE EVALUATE ,
+; 

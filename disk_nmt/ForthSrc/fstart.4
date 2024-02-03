@@ -1,0 +1,106 @@
+
+: ARG 0
+ ;
+
+CREATE TSTBUF 22 ALLOT
+
+: FTST
+  S" AUTOEXEC.4TH" R/O OPEN-FILE CR ." FO=" H. >R
+  CR ." OP=" R@ H. CR
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POSITION ." fPp=" H. H. H.
+  TSTBUF 16 DUMP 
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POSITION ." fPp=" H. H. H.
+  TSTBUF 2 DUMP 
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 DUMP 
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 DUMP 
+  7  R@ REPOS-FILE  ." Rp=" H. R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 DUMP 
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 DUMP 
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 DUMP 
+
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 DUMP 
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 DUMP 
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 DUMP 
+  TSTBUF 16 R@ READ-FILE CR ." RF=" H.  H. 
+  R@ FILE-POS ." fp="  H. H.
+  TSTBUF 16 DUMP 
+
+  R> CLOSE-FILE DROP
+;
+
+: COMMANDLINE ( -- ADDR LEN )
+ ARG   DUP
+ IF   ZCOUNT
+ ELSE DUP
+ THEN ;
+
+: fttt
+  S" AUTOEXEC.4TH" R/O OPEN-FILE CR ." FO=" H. >R
+  TSTBUF DUP 22 R@ READ-LINE CR ." RL=" H. H.  ." <" TYPE ." >" 
+  TSTBUF DUP 22 R@ READ-LINE CR ." RL=" H. H.  ." <" TYPE ." >" 
+  TSTBUF DUP 22 R@ READ-LINE CR ." RL=" H. H.  ." <" TYPE ." >" 
+  TSTBUF DUP 22 R@ READ-LINE CR ." RL=" H. H.  ." <" TYPE ." >" 
+  TSTBUF DUP 22 R@ READ-LINE CR ." RL=" H. H.  ." <" TYPE ." >" 
+  TSTBUF DUP 22 R@ READ-LINE CR ." RL=" H. H.  ." <" TYPE ." >" 
+  TSTBUF DUP 22 R@ READ-LINE CR ." RL=" H. H.  ." <" TYPE ." >" 
+
+  R> CLOSE-FILE DROP
+
+;
+
+: ftt S" autoexec.4th" INCLUDED ;
+
+: TITLE   CR  ."  [0;32m Forth[0m  building " 
+\+ TIME&DATE  [ TIME&DATE _DATE_ ] SLITERAL TYPE SPACE [ _TIME_ ] SLITERAL TYPE
+ CR
+ ;
+
+: FSTART
+  SP@ SP0 !
+  RP@ RP0 !
+  ORIGVIEWLINK TO VIEW_LINK
+
+ TITLE
+
+    S" autoexec.4th" ['] INCLUDED CATCH    ?DUP
+    IF ERROR_DO
+    THEN
+
+  MAIN_CYCLE
+;
+
+: WORDS0
+  CONTEXT @ @
+ BEGIN DUP
+ WHILE DUP ID. SPACE CDR
+ REPEAT DROP ;
+
+:  FMAIN
+ DP !
+FSTART
+
+\ CR  MAIN_CYCLE
+;
+
+
+  
+  
+

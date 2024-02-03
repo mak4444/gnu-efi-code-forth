@@ -1,0 +1,36 @@
+\ =======================
+\ *N Forth200x structures
+\ =======================
+\ *P The Forth200x standards effort has adopted s notation that
+\ ** is compatible with VFX Forth, but changes some names.
+
+: begin-structure	\ -- addr 0 ; -- size
+\ *G Begin definition of a new structure. Use in the form
+\ ** *\fo{BEGIN-STRUCTURE <name>}. At run time *\fo{<name>}
+\ ** returns the size of the structure. The Forth200x version
+\ ** of the MPE word *\fo{struct}.
+  create
+    here 0  !csp  0 ,                   \ mark stack, lay dummy
+  does> @  ;                            \ -- rec-len
+
+: end-structure		\ addr n --
+\ *G Terminate definition of a structure.
+\ ** The Forth200x version of the MPE word *\fo{end-struct}.
+  ?csp  swap !  ;                       \ check stack, set len
+
+: +FIELD	\ n <"name"> -- ; Exec: addr -- 'addr
+\ *G Create a new field of size *\i{n} bytes within a structure
+\ ** definition. The Forth200x version of the MPE word *\fo{field}.
+  create  over , +  does>  @ +  ;
+
+: cfield:       \ n1 <"name"> -- n2 ; Exec: addr -- 'addr
+\ *G Create a new field of size *\fo{1 CHARS} within a structure
+\ ** definition,
+  1 chars +FIELD  ;
+
+: field:        \ n1 <"name"> -- n2 ; Exec: addr -- 'addr
+\ *G Create a new field of size *\fo{1 CELLS} within a structure
+\ ** definition. The field is *\fo{ALIGNED}.
+  aligned  1 cells +FIELD  ;
+
+

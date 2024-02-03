@@ -1,0 +1,422 @@
+//
+
+//
+
+//[IFNDEF] FM/MOD
+
+//
+
+//CODE FM/MOD	\ d1 n2 -- rem quot
+
+//	mov    %rax,%rcx
+
+FMrslMOD:
+	mov	%rax,%rcx	# 42F168 48 89 C1 
+//	mov    (%rbp),%rdx
+
+	mov	0x00(%rbp),%rdx	# 42F16B 48 8B 55 0 
+//	mov    %rdx,%rbx
+
+	mov	%rdx,%rbx	# 42F16F 48 89 D3 
+//	mov    cell(%rbp),%rax
+
+	mov	0x08(%rbp),%rax	# 42F172 48 8B 45 8 
+//	idiv   %rcx
+
+		idivq	%rcx	# 42F176 48 F7 F9 
+//	test   %rdx,%rdx
+
+	test	%rdx,%rdx	# 42F179 48 85 D2 
+//	je     0f
+
+	jz	 ( FM/MOD+21  ) 	# 42F17C 74 B 
+//	xor    %rcx,%rbx
+
+	xor	%rcx,%rbx	# 42F17E 48 31 CB 
+//	jns    0f
+
+	jNs	 ( FM/MOD+21  ) 	# 42F181 79 6 
+//	dec    %rax
+
+	decq	%rax	# 42F183 48 FF C8 
+//	add    %rcx,%rdx
+
+	add	%rcx,%rdx	# 42F186 48 1 CA 
+//0:	lea    cell(%rbp),%rbp
+
+	lea	0x08(%rbp),%rbp	# 42F189 48 8D 6D 8 
+//	mov    %rdx,(%rbp)
+
+	mov	%rdx,0x00(%rbp)	# 42F18D 48 89 55 0 
+//	ret    
+
+	ret		# 42F191 C3 
+//END-CODE
+
+//[THEN]
+
+//
+
+//[IFNDEF] SM/REM
+
+//CODE SM/REM	\ d1 n2 -- rem quot
+
+//	mov    %rax,%rcx
+
+SMrslREM:
+	mov	%rax,%rcx	# 42F192 48 89 C1 
+//	mov    (%rbp),%rdx
+
+	mov	0x00(%rbp),%rdx	# 42F195 48 8B 55 0 
+//	mov    8(%rbp),%rax
+
+	mov	0x08(%rbp),%rax	# 42F199 48 8B 45 8 
+//	idiv   %rcx
+
+		idivq	%rcx	# 42F19D 48 F7 F9 
+//	lea    8(%rbp),%rbp
+
+	lea	0x08(%rbp),%rbp	# 42F1A0 48 8D 6D 8 
+//	mov    %rdx,(%rbp)
+
+	mov	%rdx,0x00(%rbp)	# 42F1A4 48 89 55 0 
+//	ret    
+
+	ret		# 42F1A8 C3 
+//END-CODE
+
+//[THEN]
+
+//
+
+//[IFNDEF] */
+
+//CODE */         \ n1 n2 n3 -- n4
+
+//	mov    %rax,%rcx
+
+mulrsl:
+	mov	%rax,%rcx	# 42F1A9 48 89 C1 
+//	mov    (%rbp),%rax
+
+	mov	0x00(%rbp),%rax	# 42F1AC 48 8B 45 0 
+//	imulq  8(%rbp)
+
+		imulq	0x08(%rbp)	# 42F1B0 48 F7 6D 8 
+//	idiv   %rcx
+
+		idivq	%rcx	# 42F1B4 48 F7 F9 
+//	lea    0x10(%rbp),%rbp
+
+	lea	0x10(%rbp),%rbp	# 42F1B7 48 8D 6D 10 
+//	ret    
+
+	ret		# 42F1BB C3 
+//END-CODE
+
+//[THEN]
+
+//
+
+//[IFNDEF] */MOD
+
+//CODE */MOD	\ n1 n2 n3 -- rem quot
+
+//	mov    %rax,%rcx
+
+mulrslMOD:
+	mov	%rax,%rcx	# 42F1BC 48 89 C1 
+//	mov    (%rbp),%rax
+
+	mov	0x00(%rbp),%rax	# 42F1BF 48 8B 45 0 
+//	imulq  8(%rbp)
+
+		imulq	0x08(%rbp)	# 42F1C3 48 F7 6D 8 
+//	idiv   %rcx
+
+		idivq	%rcx	# 42F1C7 48 F7 F9 
+//	mov    %rdx,8(%rbp)
+
+	mov	%rdx,0x08(%rbp)	# 42F1CA 48 89 55 8 
+//	lea    8(%rbp),%rbp
+
+	lea	0x08(%rbp),%rbp	# 42F1CE 48 8D 6D 8 
+//	ret    
+
+	ret		# 42F1D2 C3 
+//END-CODE
+
+//[THEN]
+
+//
+
+//
+
+//[IFNDEF] dmax
+
+//: dmax          \ d1 d2 -- d1|d2
+
+//\ *G Return the maximum double number from the two supplied.
+
+//  2over 2over d< if 2swap then 2drop ;
+
+dmax:
+	mov	0x10(%rbp),%rdx	# 42F1D3 48 8B 55 10 
+	mov	%rax,-0x08(%rbp)	# 42F1D7 48 89 45 F8 
+	mov	%rdx,-0x10(%rbp)	# 42F1DB 48 89 55 F0 
+	mov	0x08(%rbp),%rax	# 42F1DF 48 8B 45 8 
+	mov	0x00(%rbp),%rdx	# 42F1E3 48 8B 55 0 
+	mov	%rax,-0x18(%rbp)	# 42F1E7 48 89 45 E8 
+	mov	%rdx,-0x20(%rbp)	# 42F1EB 48 89 55 E0 
+	mov	-0x08(%rbp),%rax	# 42F1EF 48 8B 45 F8 
+	lea	-0x20(%rbp),%rbp	# 42F1F3 48 8D 6D E0 
+	call	 ( D< ) 	# 42F1F7 E8 3D 54 FD FF 
+	test	%rax,%rax	# 42F1FC 48 85 C0 
+	mov	0x00(%rbp),%rax	# 42F1FF 48 8B 45 0 
+	lea	0x08(%rbp),%rbp	# 42F203 48 8D 6D 8 
+	jz	 ( dmax+55  ) 	# 42F207 F 84 1B 0 0 0 
+	mov	0x00(%rbp),%rcx	# 42F20D 48 8B 4D 0 
+	mov	0x08(%rbp),%rdx	# 42F211 48 8B 55 8 
+	mov	0x10(%rbp),%rbx	# 42F215 48 8B 5D 10 
+	mov	%rcx,0x10(%rbp)	# 42F219 48 89 4D 10 
+	mov	%rax,0x08(%rbp)	# 42F21D 48 89 45 8 
+	mov	%rbx,0x00(%rbp)	# 42F221 48 89 5D 0 
+	mov	%rdx,%rax	# 42F225 48 89 D0 
+	mov	0x08(%rbp),%rax	# 42F228 48 8B 45 8 
+	lea	0x10(%rbp),%rbp	# 42F22C 48 8D 6D 10 
+	ret		# 42F230 C3 
+//[THEN]
+
+//
+
+//[IFNDEF] dmin
+
+//: dmin          \ d1 d2 -- d1|d2
+
+//\ *G Return the minimum double number from the two supplied.
+
+//  2over 2over d< 0= if 2swap then 2drop ;
+
+dmin:
+	mov	0x10(%rbp),%rdx	# 42F231 48 8B 55 10 
+	mov	%rax,-0x08(%rbp)	# 42F235 48 89 45 F8 
+	mov	%rdx,-0x10(%rbp)	# 42F239 48 89 55 F0 
+	mov	0x08(%rbp),%rax	# 42F23D 48 8B 45 8 
+	mov	0x00(%rbp),%rdx	# 42F241 48 8B 55 0 
+	mov	%rax,-0x18(%rbp)	# 42F245 48 89 45 E8 
+	mov	%rdx,-0x20(%rbp)	# 42F249 48 89 55 E0 
+	mov	-0x08(%rbp),%rax	# 42F24D 48 8B 45 F8 
+	lea	-0x20(%rbp),%rbp	# 42F251 48 8D 6D E0 
+	call	 ( D< ) 	# 42F255 E8 DF 53 FD FF 
+	test	%rax,%rax	# 42F25A 48 85 C0 
+	mov	0x00(%rbp),%rax	# 42F25D 48 8B 45 0 
+	lea	0x08(%rbp),%rbp	# 42F261 48 8D 6D 8 
+	jNz	 ( dmin+55  ) 	# 42F265 F 85 1B 0 0 0 
+	mov	0x00(%rbp),%rcx	# 42F26B 48 8B 4D 0 
+	mov	0x08(%rbp),%rdx	# 42F26F 48 8B 55 8 
+	mov	0x10(%rbp),%rbx	# 42F273 48 8B 5D 10 
+	mov	%rcx,0x10(%rbp)	# 42F277 48 89 4D 10 
+	mov	%rax,0x08(%rbp)	# 42F27B 48 89 45 8 
+	mov	%rbx,0x00(%rbp)	# 42F27F 48 89 5D 0 
+	mov	%rdx,%rax	# 42F283 48 89 D0 
+	mov	0x08(%rbp),%rax	# 42F286 48 8B 45 8 
+	lea	0x10(%rbp),%rbp	# 42F28A 48 8D 6D 10 
+	ret		# 42F28E C3 
+//[THEN]
+
+//
+
+//\- M+ : M+ ( d1 n -- d2 )  s>d d+ ;
+
+Madd:
+	mov	%rax,-0x08(%rbp)	# 42F28F 48 89 45 F8 
+	sar	$0x3F,%rax	# 42F293 48 C1 F8 3F 
+	lea	-0x08(%rbp),%rbp	# 42F297 48 8D 6D F8 
+	call	 ( D+ ) 	# 42F29B E8 71 53 FD FF 
+	ret		# 42F2A0 C3 
+//
+
+//[IFNDEF] m*/
+
+//: m*/		\ d1 n2 +n3 -- dquot
+
+//\ *G The result dquot=(d1*n2)/n3. The intermediate value d1*n2
+
+//\ ** is triple-precision. In an ANS Forth standard program n3
+
+//\ ** can only be a positive signed number and a negative value
+
+//\ ** for n3 generates an ambiguous condition, which may cause
+
+//\ ** an error on other implementations.
+
+//  >r				\ -- d1 n2 ; R: -- n3
+
+mmulrsl:
+	Push	%rax	# 42F2A1 50 
+	mov	0x00(%rbp),%rax	# 42F2A2 48 8B 45 0 
+	sar	$0x3F,%rax	# 42F2A6 48 C1 F8 3F 
+//  s>d >r abs			\ -- d1 |n2| ; R: -- n3 sign(n2)
+
+	Push	%rax	# 42F2AA 50 
+	mov	0x00(%rbp),%rax	# 42F2AB 48 8B 45 0 
+	cqto		# 42F2AF 48 99 
+	xor	%rdx,%rax	# 42F2B1 48 31 D0 
+	sub	%rdx,%rax	# 42F2B4 48 29 D0 
+	mov	0x10(%rbp),%rdx	# 42F2B7 48 8B 55 10 
+//  -rot				\ -- |n2| d1 ; R: -- n3 sign(n2)
+
+	mov	%rax,0x10(%rbp)	# 42F2BB 48 89 45 10 
+	mov	0x08(%rbp),%rax	# 42F2BF 48 8B 45 8 
+	mov	%rdx,0x08(%rbp)	# 42F2C3 48 89 55 8 
+	mov	%rax,0x00(%rbp)	# 42F2C7 48 89 45 0 
+//  s>d r> xor			\ -- |n2| d1 d1h*sign(n2) ; R: -- n3
+
+	sar	$0x3F,%rax	# 42F2CB 48 C1 F8 3F 
+	mov	%rax,-0x08(%rbp)	# 42F2CF 48 89 45 F8 
+	pop	%rax	# 42F2D3 58 
+	xor	-0x08(%rbp),%rax	# 42F2D4 48 33 45 F8 
+//  r> swap >r >r			\ -- |n2| d1 ; R: -- d1h*sign(n2) n3
+
+	mov	%rax,%rdx	# 42F2D8 48 89 C2 
+	pop	-0x08(%rbp)	# 42F2DB 8F 45 F8 
+	mov	%rdx,%rax	# 42F2DE 48 89 D0 
+	Push	%rax	# 42F2E1 50 
+	mov	-0x08(%rbp),%rax	# 42F2E2 48 8B 45 F8 
+	Push	%rax	# 42F2E6 50 
+	mov	0x00(%rbp),%rax	# 42F2E7 48 8B 45 0 
+	lea	0x08(%rbp),%rbp	# 42F2EB 48 8D 6D 8 
+//  dabs rot			\ -- |d1| |n2| ; R: -- d1h*sign(n2) n3
+
+	call	 ( DABS ) 	# 42F2EF E8 21 5E FD FF 
+	mov	0x00(%rbp),%rdx	# 42F2F4 48 8B 55 0 
+	mov	%rax,0x00(%rbp)	# 42F2F8 48 89 45 0 
+	mov	0x08(%rbp),%rax	# 42F2FC 48 8B 45 8 
+	mov	%rdx,0x08(%rbp)	# 42F300 48 89 55 8 
+//  tuck um* 2swap um*		\ -- d1h*n2 d1l*n2 ; R: -- d1h*sign(n2) n3
+
+	mov	0x00(%rbp),%rdx	# 42F304 48 8B 55 0 
+	mov	%rax,0x00(%rbp)	# 42F308 48 89 45 0 
+	mov	%rdx,-0x08(%rbp)	# 42F30C 48 89 55 F8 
+	lea	-0x08(%rbp),%rbp	# 42F310 48 8D 6D F8 
+	call	 ( UM* ) 	# 42F314 E8 B7 53 FD FF 
+	mov	0x00(%rbp),%rcx	# 42F319 48 8B 4D 0 
+	mov	0x08(%rbp),%rdx	# 42F31D 48 8B 55 8 
+	mov	0x10(%rbp),%rbx	# 42F321 48 8B 5D 10 
+	mov	%rcx,0x10(%rbp)	# 42F325 48 89 4D 10 
+	mov	%rax,0x08(%rbp)	# 42F329 48 89 45 8 
+	mov	%rbx,0x00(%rbp)	# 42F32D 48 89 5D 0 
+	mov	%rdx,%rax	# 42F331 48 89 D0 
+	call	 ( UM* ) 	# 42F334 E8 97 53 FD FF 
+//  swap >r  0 d+ r> -rot		\ -- t ; R: -- d1h*sign(n2) n3
+
+	mov	0x00(%rbp),%rdx	# 42F339 48 8B 55 0 
+	mov	%rax,0x00(%rbp)	# 42F33D 48 89 45 0 
+	mov	%rdx,%rax	# 42F341 48 89 D0 
+	Push	%rax	# 42F344 50 
+	mov	$0x0,%eax	# 42F345 B8 0 0 0 0 
+	call	 ( D+ ) 	# 42F34A E8 C2 52 FD FF 
+	mov	%rax,-0x08(%rbp)	# 42F34F 48 89 45 F8 
+	pop	%rax	# 42F353 58 
+	mov	0x00(%rbp),%rdx	# 42F354 48 8B 55 0 
+	mov	%rax,0x00(%rbp)	# 42F358 48 89 45 0 
+	mov	-0x08(%rbp),%rax	# 42F35C 48 8B 45 F8 
+	mov	%rdx,-0x08(%rbp)	# 42F360 48 89 55 F8 
+	mov	%rax,-0x10(%rbp)	# 42F364 48 89 45 F0 
+//  r@ um/mod -rot r> um/mod nip swap
+
+	mov	(%rsp),%rax	# 42F368 48 8B 4 24 
+	lea	-0x10(%rbp),%rbp	# 42F36C 48 8D 6D F0 
+	call	 ( UM/MOD ) 	# 42F370 E8 84 53 FD FF 
+	mov	0x08(%rbp),%rdx	# 42F375 48 8B 55 8 
+	mov	%rax,0x08(%rbp)	# 42F379 48 89 45 8 
+	mov	0x00(%rbp),%rax	# 42F37D 48 8B 45 0 
+	mov	%rdx,0x00(%rbp)	# 42F381 48 89 55 0 
+	mov	%rax,-0x08(%rbp)	# 42F385 48 89 45 F8 
+	pop	%rax	# 42F389 58 
+	lea	-0x08(%rbp),%rbp	# 42F38A 48 8D 6D F8 
+	call	 ( UM/MOD ) 	# 42F38E E8 66 53 FD FF 
+	mov	0x08(%rbp),%rdx	# 42F393 48 8B 55 8 
+	mov	%rax,0x08(%rbp)	# 42F397 48 89 45 8 
+	mov	%rdx,%rax	# 42F39B 48 89 D0 
+	mov	%rax,0x00(%rbp)	# 42F39E 48 89 45 0 
+//  r> IF dnegate THEN
+
+	pop	%rax	# 42F3A2 58 
+	test	%rax,%rax	# 42F3A3 48 85 C0 
+	mov	0x00(%rbp),%rax	# 42F3A6 48 8B 45 0 
+	lea	0x08(%rbp),%rbp	# 42F3AA 48 8D 6D 8 
+	jz	 ( m*/+118  ) 	# 42F3AE F 84 5 0 0 0 
+	call	 ( DNEGATE ) 	# 42F3B4 E8 39 52 FD FF 
+//;
+
+	ret		# 42F3B9 C3 
+//[THEN]
+
+//
+
+//\- 4DROP : 4DROP 2DROP 2DROP ;
+
+_4DROP:
+	mov	0x18(%rbp),%rax	# 42F3BA 48 8B 45 18 
+	lea	0x20(%rbp),%rbp	# 42F3BE 48 8D 6D 20 
+	ret		# 42F3C2 C3 
+//
+
+//[IFNDEF] DU<
+
+//: DU<		\ ud1 ud2 -- flag
+
+//\ *G True if ud1<ud2.
+
+//  ROT SWAP 2DUP U< IF
+
+DUless:
+	mov	0x00(%rbp),%rdx	# 42F3C3 48 8B 55 0 
+	mov	%rax,0x00(%rbp)	# 42F3C7 48 89 45 0 
+	mov	0x08(%rbp),%rax	# 42F3CB 48 8B 45 8 
+	mov	%rdx,0x08(%rbp)	# 42F3CF 48 89 55 8 
+	mov	0x00(%rbp),%rdx	# 42F3D3 48 8B 55 0 
+	mov	%rax,0x00(%rbp)	# 42F3D7 48 89 45 0 
+	mov	%rdx,-0x08(%rbp)	# 42F3DB 48 89 55 F8 
+	xchg	%rdx,%rax	# 42F3DF 48 92 
+	mov	%rdx,-0x10(%rbp)	# 42F3E1 48 89 55 F0 
+	cmp	%rax,-0x10(%rbp)	# 42F3E5 48 39 45 F0 
+	mov	-0x08(%rbp),%rax	# 42F3E9 48 8B 45 F8 
+	jNb	 ( DU<+40  ) 	# 42F3ED F 83 10 0 0 0 
+//    4DROP True
+
+	movq	$-0x1,%rax	# 42F3F3 48 C7 C0 FF FF FF FF 
+	lea	0x18(%rbp),%rbp	# 42F3FA 48 8D 6D 18 
+//  ELSE
+
+	jmp	 ( DU<+6B  ) 	# 42F3FE E9 2B 0 0 0 
+//    <>
+
+	cmp	0x00(%rbp),%rax	# 42F403 48 3B 45 0 
+	mov	0x08(%rbp),%rax	# 42F407 48 8B 45 8 
+	lea	0x10(%rbp),%rbp	# 42F40B 48 8D 6D 10 
+	jz	 ( DU<+60  ) 	# 42F40F F 84 E 0 0 0 
+//    IF  2DROP False  ELSE  U<  THEN
+
+	mov	$0x0,%eax	# 42F415 B8 0 0 0 0 
+	lea	0x08(%rbp),%rbp	# 42F41A 48 8D 6D 8 
+	jmp	 ( DU<+6B  ) 	# 42F41E E9 B 0 0 0 
+	cmp	%rax,0x00(%rbp)	# 42F423 48 39 45 0 
+	sbb	%rax,%rax	# 42F427 48 19 C0 
+	lea	0x08(%rbp),%rbp	# 42F42A 48 8D 6D 8 
+//  THEN
+
+//;
+
+	ret		# 42F42E C3 
+//[THEN]
+
+//
+
+//\- D0< : D0< 0< NIP ;
+
+D0less:
+	sar	$0x3F,%rax	# 42F42F 48 C1 F8 3F 
+	lea	0x08(%rbp),%rbp	# 42F433 48 8D 6D 8 
+	ret		# 42F437 C3 

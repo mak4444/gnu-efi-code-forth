@@ -1,0 +1,29 @@
+REQUIRE API_1: lib\WAPI.4
+
+KERNEL32DLL YAPI_1: GetFileAttributesA 	GetFileAttributesA
+KERNEL32DLL XAPI_2: GetFileSize 	GetFileSize
+
+
+: ZFILE-EXIST ( c-addr -- f )
+  GetFileAttributesA 0xFFFFFFFF <>
+;
+
+: FILE-EXIST ( c-addr u  -- ior )
+  FILE-BUFF ASCII-Z
+  ZFILE-EXIST
+;
+
+ VARIABLE lpDistanceToMoveHigh
+
+: FILE-SIZE ( fileid -- ud ior ) \ 94 FILE
+  lpDistanceToMoveHigh SWAP
+  GetFileSize
+  DUP 0xFFFFFFFF = \  DUP -1 = IF GetLastError ELSE 0 THEN
+  lpDistanceToMoveHigh L@ SWAP
+;
+0 VALUE FFFD
+\EOF
+S" burn.4th" W/O OPEN-FILE H. TO FFFD
+\ CONSTANT FFFD
+\ FILE-BUFF ASCII-Z  GetFileAttributesA  H.
+lpDistanceToMoveHigh FFFD  GetFileSize

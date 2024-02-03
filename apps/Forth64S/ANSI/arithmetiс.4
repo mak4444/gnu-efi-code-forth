@@ -1,0 +1,107 @@
+
+
+[IFNDEF] FM/MOD
+
+CODE FM/MOD	\ d1 n2 -- rem quot
+	mov    %rax,%rcx
+	mov    (%rbp),%rdx
+	mov    %rdx,%rbx
+	mov    cell(%rbp),%rax
+	idiv   %rcx
+	test   %rdx,%rdx
+	je     0f
+	xor    %rcx,%rbx
+	jns    0f
+	dec    %rax
+	add    %rcx,%rdx
+0:	lea    cell(%rbp),%rbp
+	mov    %rdx,(%rbp)
+	ret    
+END-CODE
+[THEN]
+
+[IFNDEF] SM/REM
+CODE SM/REM	\ d1 n2 -- rem quot
+	mov    %rax,%rcx
+	mov    (%rbp),%rdx
+	mov    8(%rbp),%rax
+	idiv   %rcx
+	lea    8(%rbp),%rbp
+	mov    %rdx,(%rbp)
+	ret    
+END-CODE
+[THEN]
+
+[IFNDEF] */
+CODE */         \ n1 n2 n3 -- n4
+	mov    %rax,%rcx
+	mov    (%rbp),%rax
+	imulq  8(%rbp)
+	idiv   %rcx
+	lea    0x10(%rbp),%rbp
+	ret    
+END-CODE
+[THEN]
+
+[IFNDEF] */MOD
+CODE */MOD	\ n1 n2 n3 -- rem quot
+	mov    %rax,%rcx
+	mov    (%rbp),%rax
+	imulq  8(%rbp)
+	idiv   %rcx
+	mov    %rdx,8(%rbp)
+	lea    8(%rbp),%rbp
+	ret    
+END-CODE
+[THEN]
+
+
+[IFNDEF] dmax
+: dmax          \ d1 d2 -- d1|d2
+\ *G Return the maximum double number from the two supplied.
+  2over 2over d< if 2swap then 2drop ;
+[THEN]
+
+[IFNDEF] dmin
+: dmin          \ d1 d2 -- d1|d2
+\ *G Return the minimum double number from the two supplied.
+  2over 2over d< 0= if 2swap then 2drop ;
+[THEN]
+
+\- M+ : M+ ( d1 n -- d2 )  s>d d+ ;
+
+[IFNDEF] m*/
+: m*/		\ d1 n2 +n3 -- dquot
+\ *G The result dquot=(d1*n2)/n3. The intermediate value d1*n2
+\ ** is triple-precision. In an ANS Forth standard program n3
+\ ** can only be a positive signed number and a negative value
+\ ** for n3 generates an ambiguous condition, which may cause
+\ ** an error on other implementations.
+  >r				\ -- d1 n2 ; R: -- n3
+  s>d >r abs			\ -- d1 |n2| ; R: -- n3 sign(n2)
+  -rot				\ -- |n2| d1 ; R: -- n3 sign(n2)
+  s>d r> xor			\ -- |n2| d1 d1h*sign(n2) ; R: -- n3
+  r> swap >r >r			\ -- |n2| d1 ; R: -- d1h*sign(n2) n3
+  dabs rot			\ -- |d1| |n2| ; R: -- d1h*sign(n2) n3
+  tuck um* 2swap um*		\ -- d1h*n2 d1l*n2 ; R: -- d1h*sign(n2) n3
+  swap >r  0 d+ r> -rot		\ -- t ; R: -- d1h*sign(n2) n3
+  r@ um/mod -rot r> um/mod nip swap
+  r> IF dnegate THEN
+;
+[THEN]
+
+\- 4DROP : 4DROP 2DROP 2DROP ;
+
+[IFNDEF] DU<
+: DU<		\ ud1 ud2 -- flag
+\ *G True if ud1<ud2.
+  ROT SWAP 2DUP U< IF
+    4DROP True
+  ELSE
+    <>
+    IF  2DROP False  ELSE  U<  THEN
+  THEN
+;
+[THEN]
+
+\- D0< : D0< 0< NIP ;
