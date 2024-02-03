@@ -106,7 +106,7 @@ REQUIRE 'NOOP	Meta_x86_64/SRC/forward.f
 
 REQUIRE INCLUDED_AL	Meta_x86_64/SRC/mlist.f 
 
-REQUIRE GASM64_MOD Meta_x86_64/SRC/gasm64.4
+REQUIRE GASM64_MOD Meta_x86_64/SRC/gasm64.4th
 
 
 \ S" Meta_x86_64\SRC\aarchext.4" INCLUDED
