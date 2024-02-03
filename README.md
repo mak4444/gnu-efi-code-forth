@@ -5,7 +5,7 @@
  
  see also http://wiki.forth.org.ru/ForthOS
 
- [http://fpauk.narod.ru/panel/?a=fm#](http://fpauk.narod.ru/gnu-efi-code-forth.tar.xz)http://fpauk.narod.ru/gnu-efi-code-forth.tar.xz
+ http://fpauk.narod.ru/gnu-efi-code-forth.tar.xz
 
  
 
