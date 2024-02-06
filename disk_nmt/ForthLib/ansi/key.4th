@@ -1,0 +1,19 @@
+
+VARIABLE LASTKEY
+
+: KEY?3 ( -- flg )
+ LASTKEY
+ SYSTAB ST*ConIn @
+ DUP ReadKeyStroke @
+ 2XSYS DROP
+ LASTKEY @
+;
+
+' KEY?3 TO KEY?
+  
+
+: KEY3 ( -- c )
+ LASTKEY @ DUP IF $FFFF AND $10 <<  LASTKEY 2+ W@ OR LASTKEY OFF BREAK
+ DROP KEY2 ; 
+
+' KEY3 TO KEY
