@@ -68,20 +68,18 @@ UINT64 GCCFileSize(EFI_FILE_HANDLE FileHandle)
 EFI_STATUS
 GCCOpenFile(EFI_FILE_HANDLE * FileHandle, CHAR16 *FileName, UINT64 flg )
 {   
-   return uefi_call_wrapper(Volume->Open, 5, Volume, FileHandle, FileName, flg , EFI_FILE_VALID_ATTR );
+   return uefi_call_wrapper(Volume->Open, 5, Volume, FileHandle, FileName, flg , 0 );
 }
 
 EFI_STATUS
 GCCReadFile(EFI_FILE_HANDLE FileHandle,UINT64 * ReadSize, VOID *Buffer )
 {
-//  Print(L"FileHandle = %llx ReadSize = %llx Buffer  = %llx\n", FileHandle, * ReadSize, Buffer  );
  return uefi_call_wrapper(FileHandle->Read, 3, FileHandle, ReadSize, Buffer);
 }
 
 EFI_STATUS
 GCCWriteFile(EFI_FILE_HANDLE FileHandle,UINT64 * WriteSize, VOID *Buffer )
 {
-//  Print(L"FileHandle = %llx ReadSize = %llx Buffer  = %llx\n", FileHandle, * ReadSize, Buffer  );
  return uefi_call_wrapper(FileHandle->Write, 3, FileHandle, WriteSize, Buffer);
 }
 
@@ -113,19 +111,16 @@ GCCSetXY(UINTN Row,UINTN  Column)
    uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, Column, Row);
 }
 
+VOID
+GCCOUTPUTRESET()
+{
+   uefi_call_wrapper(ST->ConOut->Reset, 2, ST->ConOut,0);
+}
+
 SIMPLE_TEXT_OUTPUT_MODE *
 GCCTEXT_OUTPUT_MODE()
 {  return ST->ConOut->Mode;
 }
-
-/*
-VOID
-GCCSetX(UINTN Column)
-{
-   uefi_call_wrapper(ST->ConOut->SetCursorPosition, 2, ST->ConOut, Column);
-}
-*/
-
 
 typedef struct {
     CHAR16                              UnicodeChar;
