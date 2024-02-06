@@ -1173,13 +1173,6 @@ CODE UNLOOP
 	jmp	%rdx
 END-CODE
 
-CODE 1XSYS
-	mov    (%rbp),%rdi
-	CALL	%rax
-	lea    8(%rbp),%rbp
-	RET
-END-CODE
-
 \EOF
 CODE J
 	DUP,
