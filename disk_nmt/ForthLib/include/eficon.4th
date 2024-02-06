@@ -8,6 +8,33 @@
     4 FIELD tm.CursorRow
     4 FIELD tm.CursorVisible
     DROP
+
+0
+	*FIELD OI.Reset
+
+	*FIELD OutputString
+	*FIELD TestString
+
+	*FIELD QueryMode
+	*FIELD OI.SetMode
+	*FIELD OI.SetAttribute
+
+	*FIELD ClearScreen
+	*FIELD SetCursorPosition
+	*FIELD EnableCursor
+
+    \ Current mode
+	@FIELD IO*Mode
+  CONSTANT /SIMPLE_TEXT_OUTPUT_INTERFACE
+
+
+0
+	CELL+  \ *FIELD OI.Reset
+	*FIELD ReadKeyStroke
+	*FIELD WaitForKey
+DROP
+
+
 }STRUCTURES
 
 #define KEY2_UP                         0x010000
