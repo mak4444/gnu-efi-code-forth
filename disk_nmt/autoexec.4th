@@ -1,5 +1,8 @@
 .( autoexec.4th) CR
 
+\- SYSTAB &SYSTAB @ CONSTANT SYSTAB
+\- VOLUME &VOLUME @ CONSTANT VOLUME
+
 \- REQUIRED : REQUIRED ( waddr wu laddr lu -- )
 \- REQUIRED  2SWAP  SFIND  IF DROP 2DROP EXIT  ELSE 2DROP  INCLUDED THEN ;
 \- REQUIRE : REQUIRE ( "word" "libpath" -- ) PARSE-NAME PARSE-NAME  REQUIRED ;
@@ -8,34 +11,65 @@
 \- :NONAME  HERE DUP TO LAST-NON [COMPILE] ] ;
 \- RECURSE : RECURSE \ Compile a call to the current (not yet finished) definition.
 \- RECURSE	LAST @ NAME> LAST-NON UMAX COMPILE, ; IMMEDIATE
+
+ REQUIRE VIEWS_SEARCH ForthLib\tools\defview.4th 
+
+\- SCFASET : SCFASET ( cfa adr len -- ) SNFAFIND DUP 0= IF -13 THROW THEN NAME>C ! ;
+\- CFASET : CFASET  ( cfa <name> -- )  PARSE-NAME SCFASET ;
+\- LABSET : LABSET  ( cfa -- )  HERE CFASET ;
+
 \- \EOF : \EOF  ( -- )  BEGIN REFILL 0= UNTIL  POSTPONE \ ;
 
 \- EFI_BLUE   1 CONSTANT EFI_BLUE  
 \- EFI_GREEN  2 CONSTANT EFI_GREEN 
 \- EFI_RED    4 CONSTANT EFI_RED
 \- EFI_BRIGHT 8 CONSTANT EFI_BRIGHT   
-: >BG 4 << ;
- 3 COLOR! 
+: >BG 4 << ; 3 COLOR! 
  ' KEY2 TO KEY
+: 4FIELD 3 + 3 ANDC 4 FIELD ;
+: 8FIELD 7 + 7 ANDC 8 FIELD ;
+: *FIELD 8FIELD ;
+: @FIELD $F + $F ANDC 8 FIELD ;
 
  REQUIRE SEE ForthLib\asm\disgasm.4th 
+\+ F_?.NAME>S ' F_?.NAME>S  TO ?.NAME>S
  FLOAD ForthLib\tools\words.4th 
  REQUIRE CASE-INS ForthLib\lib\caseins.4th 
  REQUIRE STRUCTURES{ ForthLib\lib\structures.4th 
 
  FLOAD ForthLib\include\eficon.4th 
-\- GETXY : GETXY  TEXT_OUTPUT_MODE tm.CursorColumn L@  TEXT_OUTPUT_MODE tm.CursorRow L@ ;
-\- COLOR@ : COLOR@ TEXT_OUTPUT_MODE tm.Attribute C@ ;
+ FLOAD ForthLib\include\efiapi.4th 
+ FLOAD ForthLib\include\efiprot.4th 
+
+  SYSTAB ST*ConOut @ IO*Mode CONSTANT TEXTOUTPUTMODE
+
+\- GETXY : GETXY  TEXTOUTPUTMODE tm.CursorColumn L@  TEXTOUTPUTMODE tm.CursorRow L@ ;
+\- COLOR@ : COLOR@ TEXTOUTPUTMODE tm.Attribute C@ ;
 
  REQUIRE CO ForthLib\tools\acc.4th CO
- REQUIRE VIEWS_SEARCH ForthLib\tools\defview.4th 
  REQUIRE VIEW ForthLib\tools\view.4th 
  REQUIRE CODE ForthLib\asm\gasm64.4th
+FLOAD ForthLib/lib/syscall.4th 
 
- LASTSTP: fload work\test.4th 
+: PAGE   SYSTAB ST*ConOut @  DUP ClearScreen @ 1XSYS DROP ;
+
+FLOAD ForthLib/ansi/key.4th 
+
+ LASTSTP: fload work\asmtst.4th 
+ LASTSTP: ' GCCOUTPUTRESET DISA
+ LASTSTP: SYSTAB ST*ConOut @ ClearScreen perform
+ LASTSTP: : KEY?T BEGIN ." <SS>" KEY? UNTIL ; KEY?T
+ 
+LASTSTP: DUP TSTBUF 22 ROT WRITE-FILE H. CLOSE-FILE H.
+LASTSTP:  CLOSE-FILE H.
+LASTSTP: S" QWERTY" R/W CREATE-FILE H. DUP H.
+LASTSTP: e> see 
+LASTSTP: edit systest.4th
+
 .( TRY) CR
 .( SEE ABS) CR
-.( ' +  DISA  \ q - quit anyother - continue ) CR
+.( ' +  DISA  \ Esc - quit anyother - continue ) CR
 .( E> SEE  \ in EDIT f11 hyperlink, f12 return ) CR
+
 
 
