@@ -988,7 +988,7 @@ END-CODE
 
 \ %rdi %esi %edx
 CODE UZOPEN-FILE ( u16<name>  fam -- fileid ior ) 
-	mov    %eax,%edx
+	mov    %rax,%rdx
 	mov    (%rbp),%rsi
 	lea    (%rbp),%rdi
 	call   ' GCCOpenFile
@@ -1171,6 +1171,13 @@ CODE UNLOOP
         pop	%r15	\ index-limit-xorbit63
 	pop	%rcx
 	jmp	%rdx
+END-CODE
+
+CODE 1XSYS
+	mov    (%rbp),%rdi
+	CALL	%rax
+	lea    8(%rbp),%rbp
+	RET
 END-CODE
 
 \EOF

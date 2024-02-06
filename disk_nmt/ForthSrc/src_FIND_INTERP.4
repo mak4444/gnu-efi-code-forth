@@ -244,8 +244,7 @@ CREATE FILE-BUFF2 $101 ALLOT
 
 ;
 
-: >CREATE \ 0 AND
- ;
+: >CREATE  $8000000000000000 OR ;
 
 T: CREATE-FILE ( c-addr u fam -- fileid ior ) \ 94 FILE
   >CREATE  OPEN-FILE ;
