@@ -57,21 +57,21 @@ MODULE: GASM64_MOD
 4 CONSTANT MAXLL
 
 : :LTABLE      ( addr --- )
-   TCREATE  ." l:="  HERE h. HERE  MAXLL 0 DO 0 , LOOP  TDOES> \ F7_ED
+   TCREATE HERE  MAXLL 0 DO 0 , LOOP  TDOES> \ F7_ED
    DUP
    DUP
  CELL+  MAXLL 1- CELLS CMOVE>
    HERE SWAP ! ;
 
 : BLTABLE      ( --- addr )               \ 
-  TCREATE  ." lb="  HERE h.  , TDOES>  \  F7_ED
+  TCREATE  , TDOES>  \  F7_ED
   @ @
  DUP HERE U> ABORT" backward ref error"
 
 ;
 
 : FLTABLE      ( --- addr )               \ 
-  TCREATE  ." lF="  HERE h.  , TDOES>  \  F7_ED
+  TCREATE  , TDOES>  \  F7_ED
   @ -1  SWAP  MAXLL CELLS BOUNDS
 
   DO  HERE I @ U<
@@ -583,7 +583,7 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 : cmove, 	$44 CMOV| ;
 : cmovne,	$45 CMOV| ;
 : cmovbe,	$46 CMOV| ;
-: cmova, 	$47 CMOV| ;
+\ : cmova, 	$47 CMOV| ;
 : cmovs, 	$48 CMOV| ;
 : cmovns,	$49 CMOV| ;
 : cmovp, 	$4a CMOV| ;
@@ -611,11 +611,12 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 : movsb, PARM_HESH 0= IF 0 $a4 DO|; BREAK
  ?REX, 0 TO REG>8 $f C, $BE ADD| ;
 : movsbq, $8 TO REX_W movsb, ;
-: movsbl, LOMG?  movsb, ;
+
+\ : movsbl, LOMG?  movsb, ;
 
 : movsw, ?REX, 0 TO REG>8 $f C, $BF ADD| ;
 : movswq, #%r_x,%r_x IF 0 TO OSIZE THEN $8 TO REX_W movsw, ;
-: movswl, LOMG?  movsw, ;
+\ : movswl, LOMG?  movsw, ;
 
 : movslq, 0x62 ADD| ;
 
@@ -756,17 +757,14 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
 \  DO|;
 
-: CALL,  $E8  C, 4 - HERE - L,  ;
+: CALL,   #%r_x IF 0 TO REX.RBX 0 TO REX_W $FF C, $D0 DO|; BREAK
+  $E8  C, 4 - HERE - L,  ;
 
 : #LP, C, 1- HERE - C, ;
 
 : JMP,   #%r_x IF 0 TO REX.RBX 0 TO REX_W $FF C, $E0 DO|; BREAK
   OVER 1- HERE - SHORT? IF $eb #LP, BREAK
   $E9  C, 4 - HERE - L,  ;
-
-
-: J?   OVER 1- HERE - SHORT? IF $70 OR #LP, BREAK
-		$f C,  $80 + C, 4 - HERE - L,  ;
 
 : loopne,	$e0 #LP, ;
 : loope,	$e1 #LP, ;
