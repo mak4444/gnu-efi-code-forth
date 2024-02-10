@@ -116,6 +116,7 @@ PH: %r_x
 PH: $$   
 PH: X((
 PH: _))
+PH: _%rip
 DROP
 
 0 VALUE ((OFFSET
@@ -146,8 +147,10 @@ CREATE <<BUF
  <<BUF + C@
  DUP 0< IF -333 THROW THEN
 \ CR ." ))33 " .S KEY DROP
- TO >>))  |)) ;
- 
+ TO >>))  |)) ; 
+
+: %rip _%rip  DEPTH TO R_DEPTH ;
+
 : %_l: CREATE DUP   , 1+ DOES> @ %r_x REX.RBX 2*	TO REX.RBX 0 TO REG>8 ;
 : %_x: CREATE DUP   , 1+ DOES> @ %r_x REX.RBX 2*	TO REX.RBX 1 TO OSIZE ;
 : %r8b: %_l: DOES> @ %r_x REX.RBX 2* 1+ TO REX.RBX ;
@@ -204,6 +207,7 @@ DROP
 
  %r_x 0 (( %r_x |)) 	PARAM: #%r_x,(%r_x)
  %r_x 0 (( %r_x %r_x |)) PARAM: #%r_x,(%r_x,%r_x)	
+ 0 (( %rip |))		PARAM: #(%rip)
 
 
 CREATE TAB_(r,r)	0 C, 2 C, 1 C, 3 C,
@@ -342,6 +346,7 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 \ CR ." ((00=)" .S KEY DROP
  #%r_x IF  OR	$C0 DO|; 	BREAK
 
+ #(%rip) IF 5 DO|; ((OFFSET HERE 4+ - L,  BREAK
  #(%r_x)
 \ CR ." ((22=)" .S KEY DROP
  IF	>>)) IF 4 DO|; 3 << 5 OR >>)) OR C, ((OFFSET L,	BREAK
@@ -757,11 +762,14 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
 \  DO|;
 
-: CALL,  $E8  C, 4 - HERE - L,  ;
+: CALL,   #%r_x IF 0 TO REX.RBX 0 TO REX_W $FF C, $D0 DO|; BREAK
+	PARM_HESH IF $ff C, $10 (()), BREAK
+  $E8  C, 4 - HERE - L,  ;
 
 : #LP, C, 1- HERE - C, ;
 
 : JMP,   #%r_x IF 0 TO REX.RBX 0 TO REX_W $FF C, $E0 DO|; BREAK
+	PARM_HESH IF $ff C, $20 (()), BREAK
   OVER 1- HERE - SHORT? IF $eb #LP, BREAK
   $E9  C, 4 - HERE - L,  ;
 
