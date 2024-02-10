@@ -43,17 +43,26 @@
  FLOAD ForthLib\include\efiprot.4th 
 
   SYSTAB ST*ConOut @ IO*Mode CONSTANT TEXTOUTPUTMODE
+
+
+[IFDEF] GETMAXXY0
+ GETMAXXY0
+ [IF]  2DROP
+ [ELSE] CONSTANT COLS CONSTANT ROWS
+ [THEN]
+[THEN]
+
+
+\- ROWS 25 CONSTANT ROWS
+\- COLS 80 CONSTANT COLS
+
 1
 [IF]
-\- ROW
- 25 CONSTANT ROWS
-\- COL
- 80 CONSTANT COLS
 
 ROWS COLS * CONSTANT MON_SIZE
  
 0  VALUE GETX
-23 VALUE GETY
+ROWS 2- VALUE GETY
 
 : GETXY  GETX GETY ;
 : SETXY  2DUP [ ' SETXY  DEFER@ COMPILE, ] TO GETY TO GETX ;
@@ -91,6 +100,7 @@ FLOAD ForthLib/lib/syscall.4th
 : PAGE   SYSTAB ST*ConOut @  DUP ClearScreen @ 1XSYS DROP ;
 
 FLOAD ForthLib/ansi/key.4th 
+
 [IFNDEF] UZTYPE
 : UZTYPE ( uzadr -- )
  SYSTAB ST*ConOut @
@@ -108,6 +118,8 @@ REQUIRE DIR ForthLib\tools\dir.4th
 ." DISA ( addr -- ) - disasm" CR
 ; ->DEFER HELP              
 
+ LASTSTP: : KETST BEGIN KEY DUP EMIT  $20 OR 'q' = UNTIL ; KETST
+
  LASTSTP: fload work\asmtst.4th 
  LASTSTP: ' GCCOUTPUTRESET DISA
  LASTSTP: SYSTAB ST*ConOut @ ClearScreen perform
@@ -118,11 +130,14 @@ LASTSTP:  CLOSE-FILE H.
 LASTSTP: S" QWERTY" R/W CREATE-FILE H. DUP H.
 LASTSTP: e> see 
 
-LASTSTP: : KETST BEGIN KEY DUP EMIT  $20 OR 'q' = UNTIL ;
 LASTSTP: DIR ForthSrc 
+CREATE UTEXT  'Q' W,  'W' W,  'E' W,  'R' W, 0 ,
+LASTSTP: UTEXT UZTYPE
+
+LASTSTP: GETMAXXY0
+LASTSTP: COLS h.  MAXCURX h.
 
 .( TRY) CR
 .( SEE ABS) CR
 .( ' +  DISA  \ Esc - quit anyother - continue ) CR
 .( E> SEE  \ in EDIT f11 hyperlink, f12 return ) CR
-
