@@ -1010,10 +1010,29 @@ END-CODE
 CODE SETXY0
 	mov	(%rbp),%esi
 	mov	%eax,%edi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call	' GCCSetXY
+	pop	%rbp
+
 	mov	8(%rbp),%rax
 	lea	0x10(%rbp),%rbp
 
+	NEXT
+END-CODE
+
+
+CODE GETMAXXY0 ( -- x y flg )
+	lea    -0x18(%rbp),%rbp
+	mov	%rax,0x10(%rbp)
+	lea    8(%rbp),%rsi
+	lea    (%rbp),%rdi
+	call	' GCCSCRSIZE
 	NEXT
 END-CODE
 
