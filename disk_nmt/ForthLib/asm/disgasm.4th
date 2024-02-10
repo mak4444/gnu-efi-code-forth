@@ -77,6 +77,10 @@ REQUIRE MODULE: ForthLib\ext\spf_modules.4th
 	ELSE RDROP DROP
 	THEN ;
 
+: F_?.NAME>S      ( CFA -- )
+ DUP ." 0x" H. T_?.NAME>S
+ ;
+
 : RR.
 \ + INLINE?  ." <!"  R@  T_?.NAME>S ( R>  R@ T_?.NAME>S >R)  ." >"
  ;
@@ -732,6 +736,9 @@ DEFER INST.
 ' .M0F IS .0FCD
 
 : .MCODE  ( addr -- addr+)
+  DUP L@   $fa1e0ff3 =
+  IF  ."	endbr64" 4 +
+  BREAK
 
   WCOUNT
   ['] CODNAME. TO INST.
@@ -927,7 +934,7 @@ EXPORT
 : DISA ( assr - addr )
  BEGIN
    CR INST
-   KEY $1B =  \ Esc
+   KEY $20 OR 'q' =  \ Esc
  UNTIL
 ;
 
@@ -962,7 +969,7 @@ EXPORT
 
 ' SMINST ->DEFER MINST
 
-VARIABLE  COUNT-LINE
+ VARIABLE  COUNT-LINE
 
 : REST          ( ADR -- )
                 20    COUNT-LINE !

@@ -758,11 +758,13 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 \  DO|;
 
 : CALL,   #%r_x IF 0 TO REX.RBX 0 TO REX_W $FF C, $D0 DO|; BREAK
+	PARM_HESH IF $ff C, $10 (()), BREAK
   $E8  C, 4 - HERE - L,  ;
 
 : #LP, C, 1- HERE - C, ;
 
 : JMP,   #%r_x IF 0 TO REX.RBX 0 TO REX_W $FF C, $E0 DO|; BREAK
+	PARM_HESH IF $ff C, $20 (()), BREAK
   OVER 1- HERE - SHORT? IF $eb #LP, BREAK
   $E9  C, 4 - HERE - L,  ;
 
