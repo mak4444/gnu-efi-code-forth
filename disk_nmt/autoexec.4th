@@ -37,11 +37,45 @@
  REQUIRE CASE-INS ForthLib\lib\caseins.4th 
  REQUIRE STRUCTURES{ ForthLib\lib\structures.4th 
 
+ FLOAD ForthLib\include\efidef.4th 
  FLOAD ForthLib\include\eficon.4th 
  FLOAD ForthLib\include\efiapi.4th 
  FLOAD ForthLib\include\efiprot.4th 
 
   SYSTAB ST*ConOut @ IO*Mode CONSTANT TEXTOUTPUTMODE
+1
+[IF]
+\- ROW
+ 25 CONSTANT ROWS
+\- COL
+ 80 CONSTANT COLS
+
+ROWS COLS * CONSTANT MON_SIZE
+ 
+0  VALUE GETX
+23 VALUE GETY
+
+: GETXY  GETX GETY ;
+: SETXY  2DUP [ ' SETXY  DEFER@ COMPILE, ] TO GETY TO GETX ;
+
+: S_EMIT DUP  [ ' EMIT DEFER@ COMPILE, ] 
+  DUP	$D = IF  DROP 0		TO GETX BREAK
+	$A = IF GETY 1+ ROWS 1- UMIN TO GETY BREAK
+  GETY COLS * GETX + 1+
+  OVER 8  = IF 2- 0MAX THEN
+  MON_SIZE 1- UMIN 
+  COLS /MOD TO GETY TO GETX
+;
+
+' S_EMIT TO EMIT 
+
+3 VALUE COLOR@
+: S_COLOR!  DUP  [ ' COLOR! DEFER@ COMPILE, ] 
+ TO COLOR@ ;
+
+' S_COLOR! TO COLOR!
+
+[THEN]
 
 \- GETXY : GETXY  TEXTOUTPUTMODE tm.CursorColumn L@  TEXTOUTPUTMODE tm.CursorRow L@ ;
 \- COLOR@ : COLOR@ TEXTOUTPUTMODE tm.Attribute C@ ;
@@ -49,11 +83,30 @@
  REQUIRE CO ForthLib\tools\acc.4th CO
  REQUIRE VIEW ForthLib\tools\view.4th 
  REQUIRE CODE ForthLib\asm\gasm64.4th
+\- DROP, : DROP,	$086D8D4800458B48 , ;
+\- DUP, : DUP,	$00458948F86D8D48 , ;
+
 FLOAD ForthLib/lib/syscall.4th 
 
 : PAGE   SYSTAB ST*ConOut @  DUP ClearScreen @ 1XSYS DROP ;
 
 FLOAD ForthLib/ansi/key.4th 
+[IFNDEF] UZTYPE
+: UZTYPE ( uzadr -- )
+ SYSTAB ST*ConOut @
+ DUP OutputString @ 2XSYS DROP ;
+[THEN]
+
+REQUIRE DIR ForthLib\tools\dir.4th 
+
+:NONAME
+." WORDS -  List the definition names" CR
+." EDIT ( <filename> ) - text editor" CR
+." REE  - continue of editing" CR
+." E> ( <name> ) - Hyperlink (in EDIT f11 hyperlink, f12 return)" CR
+." SEE ( <name> ) - disasm" CR
+." DISA ( addr -- ) - disasm" CR
+; ->DEFER HELP              
 
  LASTSTP: fload work\asmtst.4th 
  LASTSTP: ' GCCOUTPUTRESET DISA
@@ -64,12 +117,12 @@ LASTSTP: DUP TSTBUF 22 ROT WRITE-FILE H. CLOSE-FILE H.
 LASTSTP:  CLOSE-FILE H.
 LASTSTP: S" QWERTY" R/W CREATE-FILE H. DUP H.
 LASTSTP: e> see 
-LASTSTP: edit systest.4th
+
+LASTSTP: : KETST BEGIN KEY DUP EMIT  $20 OR 'q' = UNTIL ;
+LASTSTP: DIR ForthSrc 
 
 .( TRY) CR
 .( SEE ABS) CR
 .( ' +  DISA  \ Esc - quit anyother - continue ) CR
 .( E> SEE  \ in EDIT f11 hyperlink, f12 return ) CR
-
-
 
