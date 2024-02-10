@@ -1,5 +1,6 @@
 #include <efi.h>
 #include <efilib.h>
+#include <eficonex.h>
 
 //int   DPBuff[0x10];
 //int   _Stekc[0x10];
@@ -18,23 +19,11 @@ SetWatchdog(UINTN seconds)
 }
 
 VOID
-m_loop()
-{        CHAR16   cc;
-	do
-	{
-	   cc=getch ();
-	   putch(cc);
-	   putch('^');
-	   putch('&');
-	} while(cc!=L' ');
-}
+C_HALT( EFI_STATUS stat );
 
 VOID
-C_HALT( EFI_STATUS st );
-
-VOID
-C_HALT( EFI_STATUS st )
-{	Exit(st, 0, NULL);
+C_HALT( EFI_STATUS stat )
+{	Exit(stat, 0, NULL);
 }
 
 EFI_FILE_HANDLE GetVolume(EFI_HANDLE image)
@@ -95,9 +84,9 @@ GCCGetPosition(EFI_FILE_HANDLE FileHandle, UINTN * Offset )
    return uefi_call_wrapper(FileHandle->GetPosition, 2, FileHandle, Offset);
 }
 
-VOID
+EFI_STATUS
 GCCCloseFile(EFI_FILE_HANDLE FileHandle)
-{  uefi_call_wrapper(FileHandle->Close, 1, FileHandle);
+{ return uefi_call_wrapper(FileHandle->Close, 1, FileHandle);
 }
 
 VOID
@@ -141,6 +130,113 @@ getkey ()
 	return efi_input_key_M;
 }
 
+EFI_HANDLE notifyHandle;
+
+EFI_KEY_DATA *Gkey;
+EFI_STATUS
+myNotify(IN EFI_KEY_DATA *key)
+{        Gkey=key;
+//	Print((CONST CHAR16*)L"Hot Key %x\n" , key->KeyState.KeyShiftState);
+	return 0;
+}
+
+
+EFI_STATUS 
+testHotKey()
+{
+	EFI_STATUS  Status;
+	EFI_KEY_DATA hotkey={0};
+	EFI_KEY_DATA key = {0};
+	EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL* InputEx = NULL;
+	Status = uefi_call_wrapper(BS->LocateProtocol,3, &SimpleTextInputExProtocol,
+			NULL,(VOID**)&InputEx );
+
+	Print(L"LocateProtocol=%r\n", Status);
+
+	hotkey.Key.ScanCode = 0;
+	hotkey.Key.UnicodeChar = 'c';
+	hotkey.KeyState.KeyShiftState = EFI_LEFT_CONTROL_PRESSED | EFI_SHIFT_STATE_VALID;
+	hotkey.KeyState.KeyToggleState = EFI_TOGGLE_STATE_VALID;
+
+
+	Status = InputEx->RegisterKeyNotify(InputEx,
+			&hotkey,
+			(EFI_KEY_NOTIFY_FUNCTION)&myNotify,
+                        (VOID**)&notifyHandle);
+	Print(L"RegisterKeyNotify=%r\n", Status);
+
+	while( key.Key.UnicodeChar != 'q')
+	{
+		UINTN Index;
+//		gBS->WaitForEvent(1, &(InputEx->WaitForKeyEx),  &Index);
+		Status = uefi_call_wrapper(ST->BootServices->WaitForEvent, 3, 1, &InputEx->WaitForKeyEx, &Index);
+		Print(L"Wait=%r\n", Status);
+		if(Status)break;
+
+	        Status = InputEx->ReadKeyStrokeEx(InputEx,
+				&key);
+		Print(L"(Scan %x Unicode%x)%x %x %llxh %r\n", key.Key.ScanCode, key.Key.UnicodeChar, key.KeyState.KeyShiftState, key.KeyState.KeyToggleState,key.Key, Status);
+		if(key.Key.UnicodeChar == 'q')
+			break;
+	}
+	Status = InputEx->UnregisterKeyNotify(InputEx, notifyHandle);
+	return Status;
+
+}
+
+typedef VOID (*AccessFileInfo)(EFI_FILE_INFO* FileInfo);
+
+EFI_STATUS 
+GetFileIo( EFI_FILE_PROTOCOL** Root)
+{
+	EFI_STATUS  Status = 0;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *SimpleFileSystem;
+    Status = gBS->LocateProtocol(
+            &gEfiSimpleFileSystemProtocolGuid,
+            NULL,
+            (VOID**)&SimpleFileSystem
+    );
+    if (EFI_ERROR(Status)) {
+     //Î´ÕÒµ½EFI_SIMPLE_FILE_SYSTEM_PROTOCOL
+        return Status;
+    }
+    Status = SimpleFileSystem->OpenVolume(SimpleFileSystem, Root);
+    return Status;
+}
+
+
+EFI_STATUS
+ListDirectory(EFI_FILE_PROTOCOL* Directory, AccessFileInfo callbk)
+{
+        UINTN                BufferSize;
+        UINTN                ReadSize;
+        EFI_STATUS  Status = 0;
+        EFI_FILE_INFO* FileInfo;
+
+        BufferSize = sizeof(EFI_FILE_INFO) + sizeof(CHAR16) * 512;
+        Status = gBS -> AllocatePool( EfiBootServicesCode, BufferSize, (VOID**)&FileInfo); 
+        while(1){
+            ReadSize = BufferSize;
+            Status = Directory -> Read(Directory, &ReadSize, FileInfo); 
+            if(Status == EFI_BUFFER_TOO_SMALL){
+                BufferSize = ReadSize;
+                Status = gBS -> FreePool( FileInfo);
+                Status = gBS -> AllocatePool( EfiBootServicesCode, BufferSize, (VOID**)&FileInfo); 
+                Status = Directory-> Read(Directory, &ReadSize, FileInfo);
+            }
+
+            if(ReadSize == 0) break;
+            callbk(FileInfo);
+        }
+        Status = gBS -> FreePool( FileInfo);
+        return 0;
+}
+
+VOID ListFileInfo(EFI_FILE_INFO* FileInfo)
+{
+    Print(L"Size : %d nFileSize:%d nPhysical Size:%d ",  FileInfo->Size, FileInfo->FileSize, FileInfo->PhysicalSize);
+    Print(L"%s\n", FileInfo->FileName);
+}
 
 VOID
 start4th_m(VOID *);
@@ -189,7 +285,27 @@ efi_main (EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
 	uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, Buffer);
 	GCCCloseFile(FileHandle);
 	}
+//	pek();
 
+//    EFI_FILE_PROTOCOL               *Root;
+//    efi_status = GetFileIo(&Root);
+//	Print(L"GetFileIo= %xh (%r)\n", efi_status, efi_status);
+//    ListDirectory(Root, ListFileInfo);
+
+//    EFI_FILE_PROTOCOL               *Mydir;
+     EFI_FILE_HANDLE pMydir;
+        Status =GCCOpenFile( &pMydir, L".", EFI_FILE_MODE_READ);
+	Print(L" Mydir = %llxh st=%x\n", pMydir,Status);
+    ListDirectory(pMydir, ListFileInfo);
+	Status = GCCCloseFile(pMydir);
+	Print(L" CloseMydir st=%x\n",Status);
+
+        Status =GCCOpenFile( &pMydir, L"ForthLib", EFI_FILE_MODE_READ);
+    ListDirectory(pMydir, ListFileInfo);
+	Status = GCCCloseFile(pMydir);
+	Print(L" CloseMydir st=%x\n",Status);
+
+//        testHotKey();
 	uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, 1);
 	Print(L"Forth application started\n");
 	SetWatchdog(0);
