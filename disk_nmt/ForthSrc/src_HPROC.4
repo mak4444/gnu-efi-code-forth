@@ -38,9 +38,11 @@ T: W, THERE W! 2 ALLOT ;
 
 T: C, THERE C! 1 ALLOT ;
 
-' EMIT1 ->defer EMIT
+' EMIT1 ->DEFER EMIT
 ' KEY1 ->DEFER KEY
 ' KEY?1 ->DEFER KEY?
+' SETXY0 ->DEFER SETXY
+' COLOR!0 ->DEFER COLOR!
 
 : TYPE_M ( c-addr1 u --- )
 \ Output the string starting at c-addr and length u to the terminal.

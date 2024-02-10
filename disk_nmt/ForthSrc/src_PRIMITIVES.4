@@ -1,17 +1,31 @@
  TEXEC_SET
 
 CODE TEST333
+
+
+\  add   (%rax,%rax,2),%edx
+
+
 	POP %r8
 	POP %rAX
- add   (%rax,%rax,2),%edx
 
 \	$f2 c, $f c, $10 c, 07 c,
+
 
 END-CODE
 
 \ EOF
 
 CODE test3330
+
+	push   HERE (%rip) \  ff 35 77 00 00 00    # 0x83
+
+	push   ' TEST333 (%rip) \  ff 35 77 00 00 00    # 0x83
+
+	pop    ' TEST333 (%rip) \  8f 05 77 00 00 00    # 0x7d
+	push   ' TEST333 (%rip) \  ff 35 77 00 00 00    # 0x83
+	call   ' TEST333 (%rip) \  ff 15 77 00 00 00    # 0x89
+	jmp    ' TEST333 (%rip) \  ff 25 77 00 00 00    # 0x8f
 
 	DUP,
 	mov    $-1,%Rax
@@ -634,7 +648,7 @@ CODE M*
 	NEXT
 ASM_END
 
-CODE /MOD
+CODE /MOD ( n1 n2 -- rem quot )
 	mov    %rax,%rcx
 	mov    0x0(%rbp),%rax
 	cqto
@@ -931,11 +945,35 @@ CODE DOVECT
 	jmp	%rbx
 END-CODE 
 
+CREATE &NOOP 'NOOP ,
+
 CODE EMIT1
 	mov    %eax,%edi
-	push	%rbp
-	call   ' putch
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
+	call	' putch
 	pop	%rbp
+
+	DROP,
+	NEXT
+END-CODE
+
+
+CODE EMIT1_
+	mov    %eax,%edi
+
+\	lea	'NOOP (%rax),%rbx  \ // for mmx
+	push	&NOOP (%rip)
+0:	push	%rbp
+	mov     %rsp, %rbp
+	call	' putch
+	pop	%rbp
+
 	DROP,
 	NEXT
 END-CODE
@@ -962,14 +1000,14 @@ CODE KEY?1
 	NEXT
 END-CODE
 
-CODE COLOR!
+CODE COLOR!0
 	mov    %eax,%edi
 	call   ' GCCSetAttribute
 	DROP,
 	NEXT
 END-CODE
 
-CODE SETXY
+CODE SETXY0
 	mov	(%rbp),%esi
 	mov	%eax,%edi
 	call	' GCCSetXY
