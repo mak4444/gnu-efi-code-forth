@@ -3,10 +3,8 @@
 
  copy disk_nmt to USB boot flash
  
- see also http://wiki.forth.org.ru/ForthOS
-
- http://fpauk.narod.ru/gnu-efi-code-forth.tar.xz
-
- 
-
+see also
+http://wiki.forth.org.ru/ForthOS
+http://fpauk.narod.ru/BochsSPF-OFW.tar.xz
+https://github.com/openbios/openbios
 

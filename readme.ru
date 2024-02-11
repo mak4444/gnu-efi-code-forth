@@ -15,3 +15,9 @@ https://habr.com/ru/articles/446072/
 
 sudo apt-get install qemu-system
 sudo apt -y install ovmf
+
+see also
+http://wiki.forth.org.ru/ForthOS#0
+http://fpauk.narod.ru/BochsSPF-OFW.tar.xz
+https://github.com/openbios/openbios
+
