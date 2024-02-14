@@ -88,8 +88,8 @@ FORTH_SRC = Forth64S/promram.4 \
  ../disk_nmt/ForthSrc/src_HPROC.4 \
  ../disk_nmt/ForthSrc/src_VARS.4 \
  ../disk_nmt/ForthSrc/macroopt.4 \
- ../disk_nmt/ForthSrc/CORTEX_M_NUMB_PARSE_IO.4 \
- ../disk_nmt/ForthSrc/CORTEX_LITERAL.4 \
+ ../disk_nmt/ForthSrc/NUMB_PARSE_IO.4 \
+ ../disk_nmt/ForthSrc/LITERAL.4 \
  ../disk_nmt/ForthSrc/src_FIND_INTERP.4 \
  ../disk_nmt/ForthSrc/TERM/INCLUDE.4 \
  ../disk_nmt/ForthSrc/fstart.4 \
@@ -109,7 +109,7 @@ all:	$(TARGETS)
 forth.so : forth.o tmpamain.o
 
 clean:
-	rm -f $(TARGETS) *~ *.o *.so
+	rm -f $(TARGETS) *~ *.o *.so tmpamain.S
 	rm -f $(SRCDIR)/Forth64S/Meta_x86_64/Mak64CppForth $(SRCDIR)/Forth64S/Meta_x86_64/MetaForth
 	rm -f $(SRCDIR)/Forth64S/src/*.S
 
