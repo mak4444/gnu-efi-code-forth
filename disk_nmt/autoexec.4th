@@ -14,17 +14,28 @@
 
  REQUIRE VIEWS_SEARCH ForthLib\tools\defview.4th 
 
-\- SCFASET : SCFASET ( cfa adr len -- ) SNFAFIND DUP 0= IF -13 THROW THEN NAME>C ! ;
-\- CFASET : CFASET  ( cfa <name> -- )  PARSE-NAME SCFASET ;
-\- LABSET : LABSET  ( cfa -- )  HERE CFASET ;
+3 VALUE COLOR@
+: S_COLOR!  DUP  [ ' COLOR! DEFER@ COMPILE, ] 
+ TO COLOR@ ;
 
-\- \EOF : \EOF  ( -- )  BEGIN REFILL 0= UNTIL  POSTPONE \ ;
+' S_COLOR! TO COLOR!
+
+\- COLOR@ : COLOR@ TEXTOUTPUTMODE tm.Attribute C@ ;
 
 \- EFI_BLUE   1 CONSTANT EFI_BLUE  
 \- EFI_GREEN  2 CONSTANT EFI_GREEN 
 \- EFI_RED    4 CONSTANT EFI_RED
 \- EFI_BRIGHT 8 CONSTANT EFI_BRIGHT   
 : >BG 4 << ; 3 COLOR! 
+
+ REQUIRE EFI_ERROR_DO ForthLib\ext\error.4th 
+
+\- SCFASET : SCFASET ( cfa adr len -- ) SNFAFIND DUP 0= IF -13 THROW THEN NAME>C ! ;
+\- CFASET : CFASET  ( cfa <name> -- )  PARSE-NAME SCFASET ;
+\- LABSET : LABSET  ( cfa -- )  HERE CFASET ;
+
+\- \EOF : \EOF  ( -- )  BEGIN REFILL 0= UNTIL  POSTPONE \ ;
+
  ' KEY2 TO KEY
 : 4FIELD 3 + 3 ANDC 4 FIELD ;
 : 8FIELD 7 + 7 ANDC 8 FIELD ;
@@ -78,16 +89,9 @@ ROWS 2- VALUE GETY
 
 ' S_EMIT TO EMIT 
 
-3 VALUE COLOR@
-: S_COLOR!  DUP  [ ' COLOR! DEFER@ COMPILE, ] 
- TO COLOR@ ;
-
-' S_COLOR! TO COLOR!
-
 [THEN]
 
 \- GETXY : GETXY  TEXTOUTPUTMODE tm.CursorColumn L@  TEXTOUTPUTMODE tm.CursorRow L@ ;
-\- COLOR@ : COLOR@ TEXTOUTPUTMODE tm.Attribute C@ ;
 
  REQUIRE CO ForthLib\tools\acc.4th CO
  REQUIRE VIEW ForthLib\tools\view.4th 
@@ -108,6 +112,7 @@ FLOAD ForthLib/ansi/key.4th
 [THEN]
 
 REQUIRE DIR ForthLib\tools\dir.4th 
+REQUIRE NC ForthLib\tools\NNC.4th
 
 :NONAME
 ." WORDS -  List the definition names" CR
@@ -116,6 +121,7 @@ REQUIRE DIR ForthLib\tools\dir.4th
 ." E> ( <name> ) - Hyperlink (in EDIT f11 hyperlink, f12 return)" CR
 ." SEE ( <name> ) - disasm" CR
 ." DISA ( addr -- ) - disasm" CR
+." NC - file manager"  CR
 ; ->DEFER HELP              
 
  LASTSTP: : KETST BEGIN KEY DUP EMIT  $20 OR 'q' = UNTIL ; KETST
@@ -131,13 +137,22 @@ LASTSTP: S" QWERTY" R/W CREATE-FILE H. DUP H.
 LASTSTP: e> see 
 
 LASTSTP: DIR ForthSrc 
-CREATE UTEXT  'Q' W,  'W' W,  'E' W,  'R' W, 0 ,
-LASTSTP: UTEXT UZTYPE
+LASTSTP: COUNT_NAME COUNT 22 dump
+LASTSTP: nc
 
-LASTSTP: GETMAXXY0
-LASTSTP: COLS h.  MAXCURX h.
+LASTSTP: SEE $C+!
+LASTSTP: : $C+! ( c1 a1 -- ) DUP 1+! COUNT + 1- 2DUP H. H. C! ; 
+
+CREATE QWE 'Q' W, 'W' W, 'E' W, 'R' W, 'T' W, 'Y' W, 'Q' W, 0 W,
+
+
+LASTSTP: COUNT_NAME 22 DUMP
+
+LASTSTP: 'Q' COUNT_NAME $C+! 'E' COUNT_NAME $C+! 'R' COUNT_NAME $C+!
+
 
 .( TRY) CR
 .( SEE ABS) CR
 .( ' +  DISA  \ Esc - quit anyother - continue ) CR
+.( NC - file manager)  CR
 .( E> SEE  \ in EDIT f11 hyperlink, f12 return ) CR
