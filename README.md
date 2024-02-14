@@ -7,5 +7,6 @@ see also
 http://wiki.forth.org.ru/ForthOS
 http://fpauk.narod.ru/BochsSPF-OFW.tar.xz
 https://github.com/openbios/openbios
-http://fpauk.narod.ru/gnu-efi-code-forth.tar.xz
+
+intermediate version http://fpauk.narod.ru/gnu-efi-code-forth.tar.xz
 
