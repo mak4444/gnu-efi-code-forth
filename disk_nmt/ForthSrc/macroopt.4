@@ -1421,13 +1421,14 @@ OP0@ L@ ADD|OR|AND|XOR<> OR	\ __  X(%rbp),%rax
 
 OP0@ L@ 2448d48 XOR	\	lea     1(%rdx,%rax),%rax
 OFF-EAX 0=
-OR 0=	M_WL  M\ 20C DTST
+OR 0=	0 AND \ !!!!!!!!
+	M_WL  M\ 20C DTST
 	OP0@ 4 + C@ C>S OFF-EAX +
 	DUP SHORT?
 	IF	OP0@ 4 + C!
 	ELSE DUP LONG? 0= IF DROP BREAK
 	  84 OP0@ 2+ C! OP0@ 4 + L!
-	THEN
+	THEN  0 TO OFF-EAX 
         M\ 20D DTST
 	MOPT-RULES
 	REPEAT

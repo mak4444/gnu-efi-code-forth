@@ -206,6 +206,7 @@ CREATE LT  $0A0A0A0A ,
 ;
 
 : ASCII-UZ     ( addr len buff -- buff-uz )        \ make an ascii string
+  OVER 0= IF NIP NIP BREAK
    DUP>R
    2DUP SWAP 1+ 2* ERASE
    -ROT
@@ -223,23 +224,26 @@ CREATE LT  $0A0A0A0A ,
 
 ;
 
+: >EFIFILENAME0 ( adr1 len adr -- adr ) ASCII-UZ Z/TO\ ; 
+' >EFIFILENAME0 ->DEFER >EFIFILENAME
+
 CREATE FILE-BUFF  $101 ALLOT
 CREATE FILE-BUFF2 $101 ALLOT
 
 : OPEN-FILE ( c-addr u fam -- fileid ior )
-  >R  FILE-BUFF  ASCII-UZ Z/TO\
+  >R  FILE-BUFF  >EFIFILENAME
   R>  UZOPEN-FILE
 ;
 
 
 : DELETE-FILE ( c-addr u -- flg )
-   FILE-BUFF  ASCII-UZ Z/TO\
+   FILE-BUFF  >EFIFILENAME
     ZDELETE-FILE
 ;
 
 : RENAME-FILE ( c-addr1 u1 c-addr2 u2 -- ior ) 
-   FILE-BUFF  ASCII-UZ Z/TO\ -ROT
-   FILE-BUFF2  ASCII-UZ Z/TO\ 
+   FILE-BUFF  >EFIFILENAME -ROT
+   FILE-BUFF2 >EFIFILENAME 
    ZRENAME-FILE
 
 ;
