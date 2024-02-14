@@ -86,8 +86,8 @@ IMGLIT:
 .include "Forth64S/src/src_VARS.S"
 .include "Forth64S/src/src_HPROC.S"
 .include "Forth64S/src/macroopt.S"
-.include "Forth64S/src/CORTEX_M_NUMB_PARSE_IO.S"
-.include "Forth64S/src/CORTEX_LITERAL.S"
+.include "Forth64S/src/NUMB_PARSE_IO.S"
+.include "Forth64S/src/LITERAL.S"
 .include "Forth64S/src/src_FIND_INTERP.S"
 .include "Forth64S/src/TERM/INCLUDE.S"
 
