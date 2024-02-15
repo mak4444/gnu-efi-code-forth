@@ -230,10 +230,11 @@ CREATE LT  $0A0A0A0A ,
 CREATE FILE-BUFF  $101 ALLOT
 CREATE FILE-BUFF2 $101 ALLOT
 
-: OPEN-FILE ( c-addr u fam -- fileid ior )
+: OPEN-FILE0 ( c-addr u fam -- fileid ior )
   >R  FILE-BUFF  >EFIFILENAME
   R>  UZOPEN-FILE
 ;
+' OPEN-FILE0 ->DEFER OPEN-FILE
 
 
 : DELETE-FILE ( c-addr u -- flg )
