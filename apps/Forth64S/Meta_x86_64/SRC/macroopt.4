@@ -402,6 +402,7 @@ C7FE AND
  DUP 0601 XOR IF \ add    %eax,(%rsi) add    %rax,(%r14)
  DUP 0689 XOR IF \ mov    %eax,(%rsi) mov    %rax,(%r14)
  DUP F883 XOR IF \ cmp	$-0x01,%eax
+ DUP 00FF XOR IF \ incl   (%rax)
 
  DUP FFF0 AND	0580 XOR IF \ mov     %eax,dcomasubSET+0x5 (%rip) ...
  DUP		05C7 XOR IF \ mov     $X,Y(%rip)
@@ -1421,8 +1422,7 @@ OP0@ L@ ADD|OR|AND|XOR<> OR	\ __  X(%rbp),%rax
 
 OP0@ L@ 2448d48 XOR	\	lea     1(%rdx,%rax),%rax
 OFF-EAX 0=
-OR 0=	0 AND \ !!!!!!!!
-	M_WL  M\ 20C DTST
+OR 0=	M_WL  M\ 20C DTST
 	OP0@ 4 + C@ C>S OFF-EAX +
 	DUP SHORT?
 	IF	OP0@ 4 + C!
