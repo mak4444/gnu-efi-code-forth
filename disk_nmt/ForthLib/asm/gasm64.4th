@@ -116,6 +116,7 @@ PH: %r_x
 PH: $$   
 PH: X((
 PH: _))
+PH: _%rip
 DROP
 
 0 VALUE ((OFFSET
@@ -146,8 +147,10 @@ CREATE <<BUF
  <<BUF + C@
  DUP 0< IF -333 THROW THEN
 \ CR ." ))33 " .S KEY DROP
- TO >>))  |)) ;
- 
+ TO >>))  |)) ; 
+
+: %rip _%rip  DEPTH TO R_DEPTH ;
+
 : %_l: CREATE DUP   , 1+ DOES> @ %r_x REX.RBX 2*	TO REX.RBX 0 TO REG>8 ;
 : %_x: CREATE DUP   , 1+ DOES> @ %r_x REX.RBX 2*	TO REX.RBX 1 TO OSIZE ;
 : %r8b: %_l: DOES> @ %r_x REX.RBX 2* 1+ TO REX.RBX ;
@@ -157,7 +160,6 @@ CREATE <<BUF
 
 : %r_x: %_l: DOES> @ %r_x REX.RBX 2*    TO REX.RBX  #(( IF DEPTH TO R_DEPTH BREAK $8 TO REX_W 1 TO REG>8 ;
 : %r_n: %_l: DOES> @ %r_x REX.RBX 2* 1+
-\  CR ." %r_n=" .S KEY DROP
  TO REX.RBX  #(( IF DEPTH TO R_DEPTH BREAK $8 TO REX_W 1 TO REG>8 ;
 
 0
@@ -204,6 +206,9 @@ DROP
 
  %r_x 0 (( %r_x |)) 	PARAM: #%r_x,(%r_x)
  %r_x 0 (( %r_x %r_x |)) PARAM: #%r_x,(%r_x,%r_x)	
+ 0 (( %rip |))		PARAM: #(%rip)
+ 0 (( %rip |))	%r_x	PARAM: #(%rip),%r_x
+  %r_x 0 (( %rip |))	PARAM: #%r_x,(%rip)
 
 
 CREATE TAB_(r,r)	0 C, 2 C, 1 C, 3 C,
@@ -342,6 +347,7 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 \ CR ." ((00=)" .S KEY DROP
  #%r_x IF  OR	$C0 DO|; 	BREAK
 
+ #(%rip) IF 5 DO|; ((OFFSET  HERE 4+ - L, BREAK
  #(%r_x)
 \ CR ." ((22=)" .S KEY DROP
  IF	>>)) IF 4 DO|; 3 << 5 OR >>)) OR C, ((OFFSET L,	BREAK
@@ -498,11 +504,13 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
   #%r_x,(%r_x)		IF C, SWAP 3 << ['] #(%r_x)	>PARM (()), BREAK
   #%r_x,(%r_x,%r_x)	IF C, ROT  3 << ['] #(%r_x,%r_x) >PARM (()), BREAK
+  #%r_x,(%rip)		IF C, 3 << ['] #(%rip)	>PARM (()), BREAK
 
   2 OR
 
   #(%r_x),%r_x		IF C, 3 << ['] #(%r_x)		>PARM (()), BREAK
   #(%r_x,%r_x),%r_x	IF C, 3 << ['] #(%r_x,%r_x)	>PARM (()), BREAK
+  #(%rip),%r_x		IF C, 3 << ['] #(%rip)	>PARM (()), BREAK
   -333 THROW
 ;
 
@@ -681,6 +689,7 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
   #(%r_x),%r_x		IF SWAP [']  #%r_x,(%r_x)	>PARM 0x8C ADD|  BREAK
   #(%r_x,%r_x),%r_x	IF -ROT [']  #%r_x,(%r_x,%r_x)	>PARM 0x8C ADD|  BREAK 
+  #(%rip),%r_x		IF	[']  #%r_x,(%rip)	>PARM 0x8D ADD|  BREAK
 
   -333 THROW
  ;
@@ -754,8 +763,6 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
   -333 THROW
 ;
-
-\  DO|;
 
 : CALL,   #%r_x IF 0 TO REX.RBX 0 TO REX_W $FF C, $D0 DO|; BREAK
 	PARM_HESH IF $ff C, $10 (()), BREAK
