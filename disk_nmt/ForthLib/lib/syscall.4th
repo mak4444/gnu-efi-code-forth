@@ -98,19 +98,24 @@ CODE 5XSYS
 	and	$0xf, %rbx
         je      0f
 
-	sub    $0x38,%rsp
-	mov    0x20(%rbp),%rcx
-	mov    %rcx,0x20(%rsp)
+	sub    $0x48,%rsp
+	lea    0x38(%rsp),%rbx
+	mov    %rbx,0x20(%rsp)
+	mov    0x20(%rbp),%rbx
+	mov    %rbx 0x38(%rsp)
+
 	CALL	%rax
-	add    $0x38,%rsp
+	add    $0x48,%rsp
 	lea	0x28(%rbp),%rbp
 	RET
 
-0:	sub    $0x40,%rsp
-	mov    0x20(%rbp),%rcx
-	mov    %rcx,0x20(%rsp)
+0:	sub    $0x50,%rsp
+	lea    0x38(%rsp),%rbx
+	mov    %rbx,0x20(%rsp)
+	mov    0x20(%rbp),%rbx
+	mov    %rbx 0x38(%rsp)
 	CALL	%rax
-	add    $0x40,%rsp
+	add    $0x50,%rsp
 	lea	0x28(%rbp),%rbp
 	RET
 END-CODE
