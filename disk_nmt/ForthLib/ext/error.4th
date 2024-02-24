@@ -10,35 +10,35 @@
 
 : EFI_ERRORS.  ( u -- ) 
    $FF AND   ." EFI " 
-1  EFI_ERRORS> LOAD_ERROR                  
-2  EFI_ERRORS> INVALID_PARAMETER           
-3  EFI_ERRORS> UNSUPPORTED                 
-4  EFI_ERRORS> BAD_BUFFER_SIZE             
-5  EFI_ERRORS> BUFFER_TOO_SMALL            
-6  EFI_ERRORS> NOT_READY                   
-7  EFI_ERRORS> DEVICE_ERROR                
-8  EFI_ERRORS> WRITE_PROTECTED             
-9  EFI_ERRORS> OUT_OF_RESOURCES            
-10 EFI_ERRORS> VOLUME_CORRUPTED            
-11 EFI_ERRORS> VOLUME_FULL                 
-12 EFI_ERRORS> NO_MEDIA                    
-13 EFI_ERRORS> MEDIA_CHANGED               
-14 EFI_ERRORS> NOT_FOUND F                  
-15 EFI_ERRORS> ACCESS_DENIED               
-16 EFI_ERRORS> NO_RESPONSE                 
-17 EFI_ERRORS> NO_MAPPING                  
-18 EFI_ERRORS> TIMEOUT                     
-19 EFI_ERRORS> NOT_STARTED                 
-20 EFI_ERRORS> ALREADY_STARTED             
-21 EFI_ERRORS> ABORTED                     
-22 EFI_ERRORS> ICMP_ERROR                  
-23 EFI_ERRORS> TFTP_ERROR                  
-24 EFI_ERRORS> PROTOCOL_ERROR              
-25 EFI_ERRORS> INCOMPATIBLE_VERSION        
-26 EFI_ERRORS> SECURITY_VIOLATION          
+1  EFI_ERRORS> Load Error
+2  EFI_ERRORS> Invalid Parameter
+3  EFI_ERRORS> Unsupported
+4  EFI_ERRORS> Bad Buffer Size
+5  EFI_ERRORS> Buffer Too Small
+6  EFI_ERRORS> Not Ready
+7  EFI_ERRORS> Device Error
+8  EFI_ERRORS> Write Protected
+9  EFI_ERRORS> Out of Resources
+10 EFI_ERRORS> Volume Corrupt
+11 EFI_ERRORS> Volume Full
+12 EFI_ERRORS> No Media
+13 EFI_ERRORS> Media changed
+14 EFI_ERRORS> Not Found
+15 EFI_ERRORS> Access Denied
+16 EFI_ERRORS> No Response
+17 EFI_ERRORS> No mapping
+18 EFI_ERRORS> Time out
+19 EFI_ERRORS> Not started
+20 EFI_ERRORS> Already started
+21 EFI_ERRORS> Aborted
+22 EFI_ERRORS> ICMP Error
+23 EFI_ERRORS> TFTP Error
+24 EFI_ERRORS> Protocol Error
+25 EFI_ERRORS> Incompatible Version
+26 EFI_ERRORS> Security Violation
 27 EFI_ERRORS> CRC_ERROR                   
-28 EFI_ERRORS> END_OF_MEDIA                
-31 EFI_ERRORS> END_OF_FILE                 
+28 EFI_ERRORS> END_OF_MEDIA     
+31 EFI_ERRORS> END_OF_FILE      
 32 EFI_ERRORS> INVALID_LANGUAGE            
 33 EFI_ERRORS> COMPROMISED_DATA            
 34 EFI_ERRORS> IP_ADDRESS_CONFLICT         
