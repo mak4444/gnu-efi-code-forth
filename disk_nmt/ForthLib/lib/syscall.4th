@@ -99,10 +99,8 @@ CODE 5XSYS
         je      0f
 
 	sub    $0x48,%rsp
-	lea    0x38(%rsp),%rbx
-	mov    %rbx,0x20(%rsp)
 	mov    0x20(%rbp),%rbx
-	mov    %rbx 0x38(%rsp)
+	mov    %rbx 0x20(%rsp)
 
 	CALL	%rax
 	add    $0x48,%rsp
@@ -110,10 +108,8 @@ CODE 5XSYS
 	RET
 
 0:	sub    $0x50,%rsp
-	lea    0x38(%rsp),%rbx
-	mov    %rbx,0x20(%rsp)
 	mov    0x20(%rbp),%rbx
-	mov    %rbx 0x38(%rsp)
+	mov    %rbx 0x20(%rsp)
 	CALL	%rax
 	add    $0x50,%rsp
 	lea	0x28(%rbp),%rbp
