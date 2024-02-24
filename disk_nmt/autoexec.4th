@@ -1,4 +1,4 @@
-.( autoexec.4th) CR
+.( æautoexec.4th) CR
 
 \- SYSTAB &SYSTAB @ CONSTANT SYSTAB
 \- VOLUME &VOLUME @ CONSTANT VOLUME
@@ -53,6 +53,7 @@
  FLOAD ForthLib\include\efiapi.4th 
  FLOAD ForthLib\include\efiprot.4th 
 
+  SYSTAB *BootServices @ CONSTANT BOOTSERV
   SYSTAB ST*ConOut @ IO*Mode CONSTANT TEXTOUTPUTMODE
 
 
@@ -103,6 +104,7 @@ FLOAD ForthLib/lib/syscall.4th
 
 : PAGE   SYSTAB ST*ConOut @  DUP ClearScreen @ 1XSYS DROP ;
 
+
 FLOAD ForthLib/ansi/key.4th 
 
 [IFNDEF] UZTYPE
@@ -111,8 +113,11 @@ FLOAD ForthLib/ansi/key.4th
  DUP OutputString @ 2XSYS DROP ;
 [THEN]
 
+\- UZEMIT : UZEMIT ( ucod -- ) >R RP@ UZTYPE RDROP ;
+
 REQUIRE DIR ForthLib\tools\dir.4th 
 REQUIRE NC ForthLib\tools\NNC.4th
+
 
 :NONAME
 ." WORDS -  List the definition names" CR
@@ -122,37 +127,27 @@ REQUIRE NC ForthLib\tools\NNC.4th
 ." SEE ( <name> ) - disasm" CR
 ." DISA ( addr -- ) - disasm" CR
 ." NC - file manager"  CR
+." CD 1\ \ change directory. 1 - nunber of disk"  CR
 ; ->DEFER HELP              
 
  LASTSTP: : KETST BEGIN KEY DUP EMIT  $20 OR 'q' = UNTIL ; KETST
 
  LASTSTP: fload work\asmtst.4th 
  LASTSTP: ' GCCOUTPUTRESET DISA
- LASTSTP: SYSTAB ST*ConOut @ ClearScreen perform
  LASTSTP: : KEY?T BEGIN ." <SS>" KEY? UNTIL ; KEY?T
  
-LASTSTP: DUP TSTBUF 22 ROT WRITE-FILE H. CLOSE-FILE H.
-LASTSTP:  CLOSE-FILE H.
-LASTSTP: S" QWERTY" R/W CREATE-FILE H. DUP H.
-LASTSTP: e> see 
-
+ LASTSTP: e> see 
 LASTSTP: DIR ForthSrc 
-LASTSTP: COUNT_NAME COUNT 22 dump
 LASTSTP: nc
-
-LASTSTP: SEE $C+!
-LASTSTP: : $C+! ( c1 a1 -- ) DUP 1+! COUNT + 1- 2DUP H. H. C! ; 
-
-CREATE QWE 'Q' W, 'W' W, 'E' W, 'R' W, 'T' W, 'Y' W, 'Q' W, 0 W,
-
-
-LASTSTP: COUNT_NAME 22 DUMP
-
-LASTSTP: 'Q' COUNT_NAME $C+! 'E' COUNT_NAME $C+! 'R' COUNT_NAME $C+!
-
+LASTSTP: see GCCLOCBUF
+LASTSTP: DIR.
 
 .( TRY) CR
 .( SEE ABS) CR
 .( ' +  DISA  \ Esc - quit anyother - continue ) CR
-.( NC - file manager)  CR
-.( E> SEE  \ in EDIT f11 hyperlink, f12 return ) CR
+.( CD 1\ \ change directory. 1 - nunber of disk)  CR
+.( NC \ file manager)  CR
+.( E> SEE  \ in EDIT f11 hyperlink, f12 return ) CR   
+
+\ dsdsdsd
+
