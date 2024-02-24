@@ -11,7 +11,7 @@
 STRUCTURES{
 
   0
-    *FIELD f.Revision
+    *FIELD Revision
     *FIELD f.Open
     *FIELD f.Close
     *FIELD f.Delete
@@ -32,9 +32,6 @@ STRUCTURES{
 
 \ File information types
 
-\ #define EFI_FILE_INFO_ID   \
-\   { 0x9576e92, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b} }
-
  0
     *FIELD                  FI.Size
     *FIELD                  FI.FileSize
@@ -46,5 +43,37 @@ STRUCTURES{
    2 FIELD                  FI.FileName
  CONSTANT /EFI_FILE_INFO
 
+    8 \ Revision
+    *FIELD F_Open
+    *FIELD F_Close
+    *FIELD F_Delete
+    *FIELD F_Read
+    *FIELD F_Write
+    *FIELD F_GetPosition
+    *FIELD F_SetPosition
+    *FIELD F_GetInfo
+    *FIELD F_SetInfo
+    *FIELD F_Flush
+    *FIELD F_OpenEx
+    *FIELD F_ReadEx
+    *FIELD F_WriteEx
+    *FIELD F_FlushEx
+DROP
+
+}STRUCTURES
+
+\
+\ Simple file system protocol
+\
+
+ALIGN
+CREATE EFI_SIMPLE_FILE_SYSTEM_GUID
+    0x964e5b22 L, 0x6459 W, 0x11d2 W, 
+    0x8e C, 0x39 C, 0x0 C, 0xa0 C, 0xc9 C, 0x69 C, 0x72 C, 0x3b C,
+
+STRUCTURES{
+    8 \	Revision
+    *FIELD	OpenVolume
+DROP
 }STRUCTURES
 
