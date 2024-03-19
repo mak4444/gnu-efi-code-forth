@@ -68,7 +68,7 @@
 \- ROWS 25 CONSTANT ROWS
 \- COLS 80 CONSTANT COLS
 
-1
+1 \ TEXTOUTPUTMODE tm.CursorRow 0=
 [IF]
 
 ROWS COLS * CONSTANT MON_SIZE
@@ -79,14 +79,15 @@ ROWS 2- VALUE GETY
 : GETXY  GETX GETY ;
 : SETXY  2DUP [ ' SETXY  DEFER@ COMPILE, ] TO GETY TO GETX ;
 
-: S_EMIT DUP  [ ' EMIT DEFER@ COMPILE, ] 
+: XY_EMIT_SET ( c -- )
   DUP	$D = IF  DROP 0		TO GETX BREAK
 	$A = IF GETY 1+ ROWS 1- UMIN TO GETY BREAK
   GETY COLS * GETX + 1+
   OVER 8  = IF 2- 0MAX THEN
   MON_SIZE 1- UMIN 
-  COLS /MOD TO GETY TO GETX
-;
+  COLS /MOD TO GETY TO GETX ;
+
+: S_EMIT DUP  [ ' EMIT DEFER@ COMPILE, ]  XY_EMIT_SET ;
 
 ' S_EMIT TO EMIT 
 
@@ -115,9 +116,13 @@ FLOAD ForthLib/ansi/key.4th
 
 \- UZEMIT : UZEMIT ( ucod -- ) >R RP@ UZTYPE RDROP ;
 
+: UZtest BEGIN BEGIN DUP  UZEMIT DUP 2 COLOR!  H.  3 COLOR! 1+ DUP $3F AND 0= UNTIL  KEY BL = UNTIL ;
+
 REQUIRE DIR ForthLib\tools\dir.4th 
 REQUIRE NC ForthLib\tools\NNC.4th
 
+
+REQUIRE EFICALL ForthLib\lib\eficall.4th 
 
 :NONAME
 ." WORDS -  List the definition names" CR
@@ -127,7 +132,6 @@ REQUIRE NC ForthLib\tools\NNC.4th
 ." SEE ( <name> ) - disasm" CR
 ." DISA ( addr -- ) - disasm" CR
 ." NC - file manager"  CR
-." CD 1\ \ change directory. 1 - nunber of disk"  CR
 ; ->DEFER HELP              
 
  LASTSTP: : KETST BEGIN KEY DUP EMIT  $20 OR 'q' = UNTIL ; KETST
@@ -137,10 +141,20 @@ REQUIRE NC ForthLib\tools\NNC.4th
  LASTSTP: : KEY?T BEGIN ." <SS>" KEY? UNTIL ; KEY?T
  
  LASTSTP: e> see 
+
 LASTSTP: DIR ForthSrc 
 LASTSTP: nc
-LASTSTP: see GCCLOCBUF
+
+LASTSTP: vol_handles @ H.
+LASTSTP: LOCHAND THROW vol_handles @ H.
+LASTSTP: 0 SETROOT
+LASTSTP: CUR_DIR 44 dump
 LASTSTP: DIR.
+LASTSTP: ' SM-OPEN-FILE TO OPEN-FILE
+LASTSTP: ' CD-OPEN-FILE TO OPEN-FILE
+LASTSTP:  FLOAD ForthLib/ext/koi8.4th 
+LASTSTP:  UZtest
+LASTSTP: EFICALL RedHatBin\bltgrid.efi
 
 .( TRY) CR
 .( SEE ABS) CR
@@ -148,6 +162,7 @@ LASTSTP: DIR.
 .( CD 1\ \ change directory. 1 - nunber of disk)  CR
 .( NC \ file manager)  CR
 .( E> SEE  \ in EDIT f11 hyperlink, f12 return ) CR   
+.( EFICALL RedHatBin\bltgrid.efi \ ELF file run) CR
 
 \ dsdsdsd
 
