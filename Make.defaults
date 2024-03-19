@@ -111,7 +111,7 @@ OBJDIR       := $(TOPDIR)/$(ARCH)
 # Arch-specific compilation flags
 CPPFLAGS += -DCONFIG_$(ARCH)
 
-CFLAGS += -Wno-error=pragmas
+CFLAGS += -Wno-error=pragmas -DPAGE_SIZE=4096
 
 ifeq ($(ARCH),ia64)
   CFLAGS += -mfixed-range=f32-f127
