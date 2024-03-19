@@ -167,12 +167,11 @@ efi_main (EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
 
 	Print(L"  li->FilePath:        %s\n", li->FilePath);
 
-//        testHotKey();
 	uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, 1);
 	Print(L"Forth application started\n");
 	SetWatchdog(0);
-//	WaitForSingleEvent(ST->ConIn->WaitForKey, 0);
-//	uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, L"\n\n");
+
+
 	VOID * DPBuff_adr =  AllocatePool(0x180000);
 		start4th_m(DPBuff_adr);
 		pek();
