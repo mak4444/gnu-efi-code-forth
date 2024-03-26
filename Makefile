@@ -95,7 +95,6 @@ clean:
 	done
 
 cleanall: clean
-	echo clall $(SRCDIR)
 	rm -f $(SRCDIR)apps/Forth64S/Meta_x86_64/Mak64CppForth
 	rm -f $(SRCDIR)apps/Forth64S/Meta_x86_64/MetaForth
 
