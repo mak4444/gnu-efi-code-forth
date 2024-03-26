@@ -94,6 +94,11 @@ clean:
 		fi; \
 	done
 
+cleanall: clean
+	echo clall $(SRCDIR)
+	rm -f $(SRCDIR)apps/Forth64S/Meta_x86_64/Mak64CppForth
+	rm -f $(SRCDIR)apps/Forth64S/Meta_x86_64/MetaForth
+
 install:
 	@set -e ; for d in $(SUBDIRS); do \
 		mkdir -p $(OBJDIR)/$$d; \
