@@ -76,7 +76,6 @@ forth.so : forth.o  tmpamain.o shim.o pe.o pe-relocate.o load-options.o guid.o
 
 clean:
 	rm -f $(TARGETS) *~ *.o *.so tmpamain.S
-	rm -f $(SRCDIR)/Forth64S/Meta_x86_64/Mak64CppForth $(SRCDIR)/Forth64S/Meta_x86_64/MetaForth
 	rm -f $(SRCDIR)/Forth64S/src/*.S
 
 install:
