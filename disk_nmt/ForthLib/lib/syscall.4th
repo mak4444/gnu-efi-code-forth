@@ -116,3 +116,45 @@ CODE 5XSYS
 	RET
 END-CODE
 
+
+CODE 6XSYS
+	mov    0x18(%rbp),%r9
+	mov    0x10(%rbp),%r8
+	mov    8(%rbp),%rdx
+	mov    (%rbp),%rcx
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        je      0f
+
+	sub    $0x48,%rsp
+
+	mov    0x20(%rbp),%rbx
+	mov    %rbx 0x20(%rsp)
+
+	mov    0x28(%rbp),%rbx
+	mov    %rbx 0x28(%rsp)
+
+	CALL	%rax
+
+	add    $0x48,%rsp
+
+	lea	0x30(%rbp),%rbp
+	RET
+
+0:	sub    $0x50,%rsp
+
+	mov    0x20(%rbp),%rbx
+	mov    %rbx 0x20(%rsp)
+
+	mov    0x28(%rbp),%rbx
+	mov    %rbx 0x28(%rsp)
+
+	CALL	%rax
+
+	add    $0x50,%rsp
+
+	lea	0x30(%rbp),%rbp
+	RET
+END-CODE
+
