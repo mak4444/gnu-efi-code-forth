@@ -1138,24 +1138,6 @@ CODE HALT
 	NEXT
 END-CODE
 
-CODE STARTEFI  ( addr len -- ) 
-	mov	(%rbp),%edi
-	mov	%eax,%esi
-
-        mov     %rsp, %rbx
-	and	$0xf, %rbx
-        jne      0f
-	push	&NOOP (%rip)   // for mmx
-0:	push	%rbp
-	mov     %rsp, %rbp
-	call	' start_efi
-	pop	%rbp
-
-	lea	8(%rbp),%rbp
-
-	NEXT
-END-CODE
-
 CODE ZCOUNT ( addr -- addr len )
 	lea     -8(%rbp),%rbp
 	mov     %rax,%rdx
