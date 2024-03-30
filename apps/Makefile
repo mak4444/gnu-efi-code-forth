@@ -72,7 +72,7 @@ FORTH_SRC = Forth64S/promram.4 \
 all:	$(TARGETS)
 
 
-forth.so : forth.o  tmpamain.o shim.o pe.o pe-relocate.o load-options.o guid.o
+forth.so : forth.o  tmpamain.o
 
 clean:
 	rm -f $(TARGETS) *~ *.o *.so tmpamain.S
