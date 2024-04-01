@@ -639,7 +639,8 @@ OP0@ L@ FFFFFF AND C06348 XOR \ movslq  %eax,%rax       # 42D553 48 63 C0
   OVER  E08348  <> AND     \  and	$_,%rax
   SWAP  F8C148  <> AND     \  and	$_,%rax
   OR
-OP0@ L@ FFFFFF AND c08548 XOR \      test    %rax,%rax OR  0= \ MO_TST_VAL AND
+ OP0@ L@ FFFFFF AND c08548 XOR \      test    %rax,%rax
+ OR  0=
  M_WL  M\ 14 DTST
        OP1 ToOP0
 	-3 ALLOT
