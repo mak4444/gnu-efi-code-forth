@@ -12,7 +12,7 @@
 \- :NONAME  HERE DUP TO LAST-NON [COMPILE] ] ;
 \- RECURSE : RECURSE \ Compile a call to the current (not yet finished) definition.
 \- RECURSE	LAST @ NAME> LAST-NON UMAX COMPILE, ; IMMEDIATE
-ERRFILENAME 0!
+CURFILENAME 0! ERRFILENAME 0!
  REQUIRE VIEWS_SEARCH ForthLib\tools\defview.4th 
 
 3 VALUE COLOR@
