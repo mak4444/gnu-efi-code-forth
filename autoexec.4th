@@ -1,4 +1,4 @@
-.( æautoexec.4th) CR
+.( Ã¦autoexec.4th) CR
 
 \- SYSTAB &SYSTAB @ CONSTANT SYSTAB
 \- VOLUME &VOLUME @ CONSTANT VOLUME
@@ -11,7 +11,7 @@
 \- :NONAME  HERE DUP TO LAST-NON [COMPILE] ] ;
 \- RECURSE : RECURSE \ Compile a call to the current (not yet finished) definition.
 \- RECURSE	LAST @ NAME> LAST-NON UMAX COMPILE, ; IMMEDIATE
-
+CURFILENAME 0! ERRFILENAME 0!
  REQUIRE VIEWS_SEARCH ForthLib\tools\defview.4th 
 
 3 VALUE COLOR@
