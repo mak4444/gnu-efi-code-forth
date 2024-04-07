@@ -36,8 +36,9 @@ CURFILENAME 0! ERRFILENAME 0!
 \- LABSET : LABSET  ( cfa -- )  HERE CFASET ;
 
 \- \EOF : \EOF  ( -- )  BEGIN REFILL 0= UNTIL  POSTPONE \ ;
-
- ' KEY2 TO KEY
+' NOOP ->DEFER CURSOR
+: KEY2+ CURSOR KEY2 CURSOR ;
+' KEY2+ TO KEY
 : 4FIELD 3 + 3 ANDC 4 FIELD ;
 : 8FIELD 7 + 7 ANDC 8 FIELD ;
 : *FIELD 8FIELD ;
@@ -94,7 +95,15 @@ ROWS 2- VALUE GETY
 
 [THEN]
 
-\- GETXY : GETXY  TEXTOUTPUTMODE tm.CursorColumn L@  TEXTOUTPUTMODE tm.CursorRow L@ ;
+\ - GETXY : GETXY  TEXTOUTPUTMODE tm.CursorColumn L@  TEXTOUTPUTMODE tm.CursorRow L@ ;
+
+: BASETXT_MOD
+ [ ' COLOR! DEFER@ LIT, ] TO COLOR!
+ [ ' COLOR@ DEFER@ LIT, ] TO COLOR@
+ [ ' EMIT DEFER@ LIT, ] TO EMIT
+ [ ' TYPE DEFER@ LIT, ] TO TYPE
+  ['] NOOP TO CURSOR
+;
 
  REQUIRE CO ForthLib\tools\acc.4th CO
  REQUIRE VIEW ForthLib\tools\view.4th 
@@ -125,6 +134,11 @@ REQUIRE NC ForthLib\tools\NNC.4th
 
 REQUIRE EFICALL ForthLib\lib\eficall.4th 
 
+FLOAD ForthLib\GOP\gop.4th 
+FLOAD ForthLib\rus\koi8.4th 
+FLOAD ForthLib\GOP\gremit.4 
+FLOAD ForthLib\rus\rkey.4th
+
 :NONAME
 ." WORDS -  List the definition names" CR
 ." EDIT ( <filename> ) - text editor" CR
@@ -138,24 +152,13 @@ REQUIRE EFICALL ForthLib\lib\eficall.4th
  LASTSTP: : KETST BEGIN KEY DUP EMIT  $20 OR 'q' = UNTIL ; KETST
 
  LASTSTP: fload work\asmtst.4th 
- LASTSTP: ' GCCOUTPUTRESET DISA
- LASTSTP: : KEY?T BEGIN ." <SS>" KEY? UNTIL ; KEY?T
- 
- LASTSTP: e> see 
-
+ LASTSTP: ' GCCOUTPUTRESET DISA 
 LASTSTP: DIR ForthSrc 
-LASTSTP: nc
-
-LASTSTP: vol_handles @ H.
-LASTSTP: LOCHAND THROW vol_handles @ H.
-LASTSTP: 0 SETROOT
 LASTSTP: CUR_DIR 44 dump
 LASTSTP: DIR.
-LASTSTP: ' SM-OPEN-FILE TO OPEN-FILE
-LASTSTP: ' CD-OPEN-FILE TO OPEN-FILE
-LASTSTP:  FLOAD ForthLib/ext/koi8.4th 
-LASTSTP:  UZtest
+LASTSTP: e> see 
 LASTSTP: EFICALL RedHatBin\bltgrid.efi
+LASTSTP: nc
 
 .( TRY) CR
 .( SEE ABS) CR
