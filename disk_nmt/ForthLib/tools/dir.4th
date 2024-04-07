@@ -18,7 +18,7 @@ CREATE FILEINFO  FILEINFO_SIZE ALLOT
 
  CREATE CUR_DIR 1 C, '0' C, 0 , 100 ALLOT \ CUR_DIR 100 ERASE
 
-: $CD ( adr len -- )
+: $CHDIR ( adr len -- )
  DUP 0= IF 2DROP BREAK
  CUR_DIR COUNT + 1- C@ '\' <> IF '\' CUR_DIR $C+! THEN
  OVER W@  $2E2E ( ..) =
@@ -82,7 +82,7 @@ CREATE CUR_ROOT 0 ,
 
 ' >DIREFIFILENAME TO >EFIFILENAME
 
-: CD PARSE-NAME $CD ;
+: CD PARSE-NAME $CHDIR ;
 
 : UZSIM_OPEN-FILE ( uzadr fam -- fid flg )
 	0 SWAP ROT \ 0 fam uzadr
