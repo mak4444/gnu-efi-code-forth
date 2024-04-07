@@ -1,0 +1,185 @@
+
+\ gDispArray1  VALUE GR_BASE_ADDRES
+14 CONSTANT VSHRIFT@
+
+\ 1280 			constant GR_WIDTH 	\
+\ 800	 		constant GR_HEIGHT  	\
+ GR_WIDTH 4* 		constant BYTESLED	\
+ GR_WIDTH 8 / 1-	constant MAXCURX 	\
+ GR_HEIGHT VSHRIFT@ / 2/ 1-      constant MAXCURY 	\
+ BYTESLED GR_HEIGHT *     constant BYTESSCREEN	\
+\-  shrift variable SHRIFT 			\
+
+CREATE shrift screen_koi8 ,
+
+0xFFFF0000 VALUE RED
+0xFF00FF00 VALUE GREEN
+0xFF0000FF VALUE BLUE
+
+0xFF000000 VALUE BLACK
+0xFFFFFFFF VALUE WHITE
+
+0xFF800000 VALUE D_RED
+0xFF008000 VALUE D_GREEN
+0xFF000080 VALUE D_BLUE
+0xFF484848 VALUE D_WHITE
+
+
+CREATE ETLED  0 l, 0 l, 0xFF00FF00 l, 0xFF0000FF l,
+
+: BG!	DUP  32 << OR  ETLED ! ;
+
+: BG@	ETLED L@ ;
+
+: GCOLOR!	DUP  32 << OR ETLED CELL+ ! ;
+
+: GCOLOR@	ETLED CELL+ L@ ;
+
+: ATTRIB@ ETLED 4+  @ ;
+
+: ATTRIB!
+  DUP  ETLED       L!  DUP ETLED   4+ L!  32 >>
+  DUP  ETLED CELL+ L!  DUP ETLED 12 + L!
+ ;
+: ATTRIB~ -1	ETLED XOR! -1	ETLED CELL+ XOR! ;
+
+
+: COLOR!G ( uc -- )
+  BLACK
+  OVER 1 AND IF D_BLUE	OR THEN
+  OVER 2 AND IF D_GREEN	OR THEN
+  OVER 4 AND IF D_RED	OR THEN
+  OVER 8 AND IF D_WHITE OR THEN    GCOLOR!
+  BLACK
+  OVER 0x10 AND IF D_BLUE	OR THEN
+  OVER 0x20 AND IF D_GREEN	OR THEN
+  OVER 0x40 AND IF D_RED	OR THEN
+  OVER 0x80 AND IF D_WHITE	OR THEN	BG!
+
+  TO COLOR@
+;
+
+BytesLed VSHRIFT@ * VALUE SRT_BULK
+
+\- LFILL : LFILL -ROT BOUNDS DO DUP L! 4 +LOOP DROP ;
+
+: LASTCLN ( g_fon -- )
+  GR_BASE_ADDRES SRT_BULK MAXCURY * +
+  SRT_BULK 2/ 
+ROT
+ LFILL
+;
+
+\- LCMOVE : LCMOVE 4 * CMOVE ;
+
+: PAGEUP
+
+ GR_BASE_ADDRES  SRT_BULK +
+ GR_BASE_ADDRES  SRT_BULK MAXCURY * LCMOVE
+
+\ ETLED L@ LASTCLN
+;
+
+: GRCR
+\ VGAINITFLG @ 0= IF $D MMEMIT BREAK
+	0 TO GETX
+	GETY  MAXCURY U<
+	IF  GETY 1+ TO GETY
+	ELSE PAGEUP
+	THEN
+;
+
+CREATE CURSOR% 2 ,
+
+: CURSOR0 ( -- )
+	GETY BytesLed  Vshrift@ * *
+	GETX 4 * 8 * + GR_BASE_ADDRES + \ curpos
+	BytesLed Vshrift@ CURSOR% @ - * +
+	BytesLed CURSOR% @ * BOUNDS
+	do
+
+	$00FFFFFF00FFFFFF I		XOR!
+	$00FFFFFF00FFFFFF I $8 +	XOR!
+	$00FFFFFF00FFFFFF I $10 +	XOR!
+	$00FFFFFF00FFFFFF I $18 +	XOR!
+
+\ .s cr \ key drop
+	BytesLed  +loop
+
+;
+
+: GR_EMIT \ _N ( litera -- )
+	Vshrift@ * shrift @ + 
+	GETY BytesLed Vshrift@ * *
+	GETX 4 * 8 * + GR_BASE_ADDRES + \ curpos
+	BytesLed Vshrift@ * BOUNDS
+	do	dup C@ 3 <<
+
+	dup 8 and ETLED + @ I	L! 2/
+	dup 8 and ETLED + @ I $4 +	L! 2/
+	dup 8 and ETLED + @ I $8 +	L! 2/
+	dup 8 and ETLED + @ I $C +	L! 2/
+
+	dup 8 and ETLED + @ I $10 +	L! 2/
+	dup 8 and ETLED + @ I $14 +	L! 2/
+	dup 8 and ETLED + @ I $18 +	L! 2/
+	dup 8 and ETLED + @ I $1C +	L! 2/
+
+        drop
+	1+
+\ .s cr \ key drop
+	BytesLed +loop drop
+
+	GETX  MAXCURX U<
+	IF   GETX 1+ TO GETX
+	ELSE GRCR
+	THEN
+;
+
+: GREMIT ( litera -- )
+\ DUP $0D =  IF GRCR DROP EXIT THEN
+ DUP $0D =  IF DROP 0 TO GETX BREAK
+ DUP $0A =  IF DROP
+	GETY  MAXCURY U<
+	IF GETY 1+ TO GETY
+	ELSE PAGEUP
+	THEN
+ BREAK
+
+ DUP $9  =  IF
+  BEGIN BL EMIT  GETX 7 AND 0=
+  UNTIL    DROP BREAK
+ DUP $8  =  IF
+	GETX	IF  GETX 1- TO GETX THEN
+ DROP BREAK
+
+ DUP $7F  =  IF
+	GETX	IF GETX 1- TO GETX  BL EMIT GETX 1- TO GETX   THEN
+
+ DROP BREAK
+
+ GR_EMIT ;
+
+1 [IF]
+
+: GRTYPE         ( A,N -- )     
+	BEGIN  DUP
+	WHILE  SWAP COUNT  GREMIT SWAP 1-
+	REPEAT  2DROP
+;
+
+[ELSE]
+: GRTYPE         ( A,N -- )     
+   0 ?DO COUNT GREMIT LOOP DROP ;
+
+[THEN]
+
+
+: GEMIT_MOD
+ ['] COLOR!G TO COLOR!
+ ['] GREMIT  TO EMIT
+ ['] GRTYPE  TO TYPE
+ ['] CURSOR0 TO CURSOR
+;
+
+
