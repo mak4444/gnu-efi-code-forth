@@ -585,7 +585,7 @@ void SHeader()
 	Smudge();  
 } pp(SHeader)
 
-void SNunber0() // ( str len -- m flg )
+void SNumber0() // ( str len -- m flg )
 {
     char* rez;
     char NumStr[44];
@@ -595,7 +595,7 @@ void SNunber0() // ( str len -- m flg )
     while(len){ --len; NumStr[len] = caddr[len]; }
     Stack[0] = strtol( NumStr,  &rez, numericBase);
     Tos =  strlen(rez);
-}  pp(SNunber0)
+}  pp(SNumber0)
 
 void Colon(){
   Build();
@@ -1350,13 +1350,13 @@ void  MakeImag(void)
     Begin();  Co( pDup,  pPrintFileStep);
     Until();  Co( pDrop,pExit);
 
-    FthItem("SNUMBER0",pSNunber0);
+    FthItem("SNUMBER0",pSNumber0);
 
-    sCell pSNunber = Header("SNUMBER");
-    Co(pDoDefer,pSNunber0 );
+    sCell pSNumber = Header("SNUMBER");
+    Co(pDoDefer,pSNumber0 );
 
     sCell pQSLiteral0 = Header("?SLITERAL0");
-	Co(pSNunber );
+	Co(pSNumber );
 	If(); Lit(-321); Co(pFThrow);
 	Else(); Co( pStateQ); If(); Co(pLitC); Then();
 	Then();
