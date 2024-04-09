@@ -105,18 +105,21 @@ ROWS 2- VALUE GETY
   ['] NOOP TO CURSOR
 ;
 
- REQUIRE CO ForthLib\tools\acc.4th CO
- REQUIRE VIEW ForthLib\tools\view.4th 
  REQUIRE CODE ForthLib\asm\gasm64.4th
 \- DROP, : DROP,	$086D8D4800458B48 , ;
 \- DUP, : DUP,	$00458948F86D8D48 , ;
 
 FLOAD ForthLib/lib/syscall.4th 
 
+FLOAD ForthLib/ansi/keyex.4th 
+
+ REQUIRE CO ForthLib\tools\acc.4th CO
+ REQUIRE VIEW ForthLib\tools\view.4th 
+
+
 : PAGE   SYSTAB ST*ConOut @  DUP ClearScreen @ 1XSYS DROP ;
 
 
-FLOAD ForthLib/ansi/keyex.4th 
 
 [IFNDEF] UZTYPE
 : UZTYPE ( uzadr -- )
@@ -149,17 +152,18 @@ FLOAD ForthLib\rus\rkey.4th
 ." NC - file manager"  CR
 ; ->DEFER HELP              
 
- LASTSTP: : KETST BEGIN KEY DUP EMIT  $20 OR 'q' = UNTIL ; KETST
-
  LASTSTP: fload work\asmtst.4th 
  LASTSTP: ' GCCOUTPUTRESET DISA 
 LASTSTP: DIR ForthSrc 
 LASTSTP: CUR_DIR 44 dump
+LASTSTP: DIR.
 LASTSTP: BASETXT_MOD
 LASTSTP: GEMIT_MOD
 LASTSTP: e> see 
 LASTSTP: EFICALL RedHatBin\bltgrid.efi
 LASTSTP: nc
+LASTSTP: KETST
+LASTSTP: : KETST BEGIN KEYEX DUP h. KEYDATA KeyShiftState L@ h.  $20 OR 'q' = UNTIL ;
 
 .( TRY) CR
 .( SEE ABS) CR
