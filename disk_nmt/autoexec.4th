@@ -116,7 +116,7 @@ FLOAD ForthLib/lib/syscall.4th
 : PAGE   SYSTAB ST*ConOut @  DUP ClearScreen @ 1XSYS DROP ;
 
 
-FLOAD ForthLib/ansi/key.4th 
+FLOAD ForthLib/ansi/keyex.4th 
 
 [IFNDEF] UZTYPE
 : UZTYPE ( uzadr -- )
@@ -155,7 +155,6 @@ FLOAD ForthLib\rus\rkey.4th
  LASTSTP: ' GCCOUTPUTRESET DISA 
 LASTSTP: DIR ForthSrc 
 LASTSTP: CUR_DIR 44 dump
-LASTSTP: DIR.
 LASTSTP: BASETXT_MOD
 LASTSTP: GEMIT_MOD
 LASTSTP: e> see 
