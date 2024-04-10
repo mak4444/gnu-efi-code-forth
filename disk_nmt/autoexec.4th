@@ -12,7 +12,7 @@
 \- :NONAME  HERE DUP TO LAST-NON [COMPILE] ] ;
 \- RECURSE : RECURSE \ Compile a call to the current (not yet finished) definition.
 \- RECURSE	LAST @ NAME> LAST-NON UMAX COMPILE, ; IMMEDIATE
-CURFILENAME 0! ERRFILENAME 0!
+ ERRFILENAME 0!
  REQUIRE VIEWS_SEARCH ForthLib\tools\defview.4th 
 
 3 VALUE COLOR@
@@ -69,6 +69,8 @@ CURFILENAME 0! ERRFILENAME 0!
 
 \- ROWS 25 CONSTANT ROWS
 \- COLS 80 CONSTANT COLS
+\- MAXCURY ROWS CONSTANT MAXCURY
+\- MAXCURX COLS 1- CONSTANT MAXCURX 
 
 1 \ TEXTOUTPUTMODE tm.CursorRow 0=
 [IF]
@@ -113,12 +115,18 @@ FLOAD ForthLib/lib/syscall.4th
 
 FLOAD ForthLib/ansi/keyex.4th 
 
+FLOAD ForthLib\GOP\gop.4th 
+FLOAD ForthLib\rus\koi8.4th 
+FLOAD ForthLib\GOP\gremit.4 
+FLOAD ForthLib\rus\rkey.4th
+
  REQUIRE CO ForthLib\tools\acc.4th CO
+
+
  REQUIRE VIEW ForthLib\tools\view.4th 
 
 
 : PAGE   SYSTAB ST*ConOut @  DUP ClearScreen @ 1XSYS DROP ;
-
 
 
 [IFNDEF] UZTYPE
@@ -137,10 +145,6 @@ REQUIRE NC ForthLib\tools\NNC.4th
 
 REQUIRE EFICALL ForthLib\lib\eficall.4th 
 
-FLOAD ForthLib\GOP\gop.4th 
-FLOAD ForthLib\rus\koi8.4th 
-FLOAD ForthLib\GOP\gremit.4 
-FLOAD ForthLib\rus\rkey.4th
 
 :NONAME
 ." WORDS -  List the definition names" CR
@@ -154,16 +158,16 @@ FLOAD ForthLib\rus\rkey.4th
 
  LASTSTP: fload work\asmtst.4th 
  LASTSTP: ' GCCOUTPUTRESET DISA 
-LASTSTP: DIR ForthSrc 
-LASTSTP: CUR_DIR 44 dump
-LASTSTP: DIR.
-LASTSTP: BASETXT_MOD
-LASTSTP: GEMIT_MOD
-LASTSTP: e> see 
 LASTSTP: EFICALL RedHatBin\bltgrid.efi
-LASTSTP: nc
 LASTSTP: KETST
 LASTSTP: : KETST BEGIN KEYEX DUP h. KEYDATA KeyShiftState L@ h.  $20 OR 'q' = UNTIL ;
+LASTSTP: e> see 
+LASTSTP: DIR ForthSrc 
+LASTSTP: CUR_DIR 44 dump
+LASTSTP: BASETXT_MOD
+LASTSTP: GEMIT_MOD
+LASTSTP: CLIPBOARD
+LASTSTP: nc
 
 .( TRY) CR
 .( SEE ABS) CR
