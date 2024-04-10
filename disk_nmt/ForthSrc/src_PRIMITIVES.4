@@ -1,1218 +1,882 @@
- TEXEC_SET
 
-CODE TEST333
+: DO-VOC R> 1 ANDC
+ CONTEXT ! ;
+
+: ?PAIRS        \ x1 x1 --
+  XOR -22 ?THROW ;
+
+T: DEFINITIONS  ( --- )
+\ Set the definitions wordlist to the last wordlist in the search order.
+  CONTEXT @ CURRENT ! ;
+
+T: ALIGN HERE ALIGNED DP! ;
+T: HALIGN HERE HALIGNED DP! ;
+
+0 VALUE SOURCE-ID
+
+ATIB VALUE TIB
+
+: SOURCE TIB #TIB @ ;
+
+: SOURCE! ( c-addr u -- ) 
+  #TIB ! TO TIB ;
+
+: EndOfChunk ( -- flag )
+ >IN @ SOURCE NIP < 0=        \ >IN 
+;
+\ T\EOF
+
+: IsDelimiter ( char -- flag )
+ BL 1+ < ;
+
+: CharAddr ( -- c-addr )
+  SOURCE DROP >IN @ +
+;
+
+: PeekChar ( -- char )
+  CharAddr C@
+;
+
+: GetChar ( -- char flag )
+ EndOfChunk
+ IF 0 FALSE
+	ELSE PeekChar TRUE THEN ;
+
+: OnDelimiter ( -- flag )
+	GetChar SWAP IsDelimiter AND ;
+
+: SkipDelimiters ( -- ) \ 
+	BEGIN	OnDelimiter
+	WHILE	>IN 1+!
+	REPEAT >IN @   >IN_WORD ! ;
+
+: OnNotDelimiter ( -- flag )
+  GetChar SWAP IsDelimiter 0= AND ;
+
+: SkipWord ( -- ) \ 
+ BEGIN	OnNotDelimiter
+ WHILE	>IN 1+!
+ REPEAT ;
 
 
-\  add   (%rax,%rax,2),%edx
+: ParseWord ( -- c-addr u )
+ CharAddr >IN @  SkipWord
+ >IN @ - NEGATE ;
+
+: PSKIP ( char "ccc<char>" -- )
+\ 
+  BEGIN
+    DUP GetChar >R = R> AND
+  WHILE
+    >IN 1+!
+  REPEAT DROP
+;
+
+: PARSE-NAME ( -- c-addr u )
+  SkipDelimiters
+  ParseWord
+  >IN @ 1+ #TIB @ MIN >IN !   \ 
+;
+
+: SkipUpTo ( char -- ) \ 
+  BEGIN
+    DUP GetChar >R <> R> AND
+  WHILE
+    >IN 1+!
+  REPEAT DROP
+;
+
+: PARSE ( char "ccc<char>" -- c-addr u ) \ 94 CORE EXT
+  CharAddr >IN @
+  ROT SkipUpTo
+  >IN @ - NEGATE
+  >IN 1+!
+;
 
 
-	POP %r8
-	POP %rAX
+: SEARCH-NFA1 ( c-addr u wid --- 0 | nfa )
+	@
+	BEGIN   DUP \  CR ." S=" DUP H.  DUP 8 TYPE
+	WHILE
+	>R 2DUP	R@ COUNT COMPARE 0= 
+		IF 2DROP R>
+		BREAK
+ 	R> CDR
+	REPEAT
+	2DROP DROP 0 \ Not found.
+;
 
-\	$f2 c, $f c, $10 c, 07 c,
+' SEARCH-NFA1 ->DEFER SEARCH-NFA
+
+: SEARCH-WORDLIST1 ( c-addr u wid --- 0 | xt 1 xt -1)
+\ Search the wordlist with address wid for the name c-addr u.
+\ Return 0 if not found, the execution token xt and -1 for non-immediate
+\ words and xt and 1 for immediate words.
+        SEARCH-NFA DUP
+	IF	DUP NAME> SWAP
+		NAME>F L@ 1 AND 1- 1 OR
+	THEN
+
+;
+
+' SEARCH-WORDLIST1 ->DEFER SEARCH-WORDLIST
+
+: SFIND ( addr len --- addr len 0| xt 1|xt -1 )
+\ Search all word lists in the search order for the name in the
+\ counted string at c-addr. If not found return the name address and 0.
+\ If found return the execution token xt and -1 if the word is non-immediate
+\ and 1 if the word is immediate.
+\ ." SFIND=<"
+  CONTEXT
+  BEGIN	DUP @ \ DUP H.
+  WHILE	>R
+	2DUP  R@  @  SEARCH-WORDLIST ?DUP
+	IF    RDROP 2NIP EXIT \ Exit if found.
+	THEN
+	R> CELL+
+  REPEAT @
+;
+
+: ?STACK ( -> ) \ 
+ SP@ SP0 @ SWAP U< IF SP0 @ SP! -4 THROW THEN
+\  SP@ HERE - 0xE00 U< IF ." STACK: MAM" ABORT THEN
+;
+
+' NOOP ->DEFER MEM_TST
+
+: INTERPRET_ ( -> ) \ 
+\ CR ." INTERPRET=" SOURCE TYPE
+  SAVEERR? ON
+  BEGIN	PARSE-NAME \  ." <" 2DUP  TYPE ." >"
+  DUP
+  WHILE
+
+ SFIND ?DUP
+	IF     STATE @ =
+		IF COMPILE,
+		ELSE EXECUTE \ LLL @ IF ." {L}" 0 LLL ! THEN
+		THEN
+	ELSE 	?SLITERAL
+        THEN
+
+\    ?STACK  MEM_TST \  CACHBREAK
+  REPEAT 2DROP
+;
 
 
-END-CODE
+\ - &INTERPRET_ VARIABLE  &INTERPRET_
+
+\ CREATE IIII ' INTERPRET_ ,
+\ CREATE &INTERPRET ' INTERPRET_ ,
+\ : INTERPRET &INTERPRET PERFORM ;
+' INTERPRET_ ->DEFER INTERPRET
+
+: .ID ( NFA -- )   COUNT TYPE ;
+
+
+VARIABLE _fp1
+VARIABLE _fp2
+VARIABLE _addr 4 ALLOT
+VARIABLE _dos
+CREATE LT  $0A0A0A0A ,
+
+: READ-LINE ( c-addr u1 fileid -- u2 flag ior ) \ 94 FILE
+  OVER 0= IF DROP NIP TRUE 0 BREAK
+  _dos 0!
+  DUP >R
+  FILE-POSITION IF 2DROP 0 0 THEN _fp1 ! _fp2 !
+\  1+ \ LTL @ +
+  OVER _addr !
+  R@ READ-FILE   ?DUP  IF NIP RDROP 0 0 ROT EXIT THEN
+  DUP >R 0= IF RDROP RDROP 0 0 0 EXIT THEN \ были в конце файла
+  _addr @ R@
+
+ LT 1 SEARCH
+  IF   \ найден разделитель строк
+     OVER 1- C@ 13 = _dos !
+     DROP _addr @ -     DUP   
+     1+ U>D _fp2 @ _fp1 @ D+
+      RDROP R> REPOSITION-FILE DROP
+  ELSE \ не найден разделитель строк
+     2DROP
+     R>  RDROP  \ если строка прочитана не полностью - будет разрезана
+  THEN
+  _dos @ + 0 MAX
+  TRUE 0
+;
+
+: ASCII-UZ     ( addr len buff -- buff-uz )        \ make an ascii string
+  OVER 0= IF NIP NIP BREAK
+   DUP>R
+   2DUP SWAP 1+ 2* ERASE
+   -ROT
+   BOUNDS DO I C@ OVER C! 2+ LOOP DROP
+   R>
+    ;
+
+\ EBPCLROFF
+
+: Z/TO\  ( Z-addr --  Z-addr  )
+  DUP
+  BEGIN WCOUNT DUP
+  WHILE  [CHAR] / = IF [CHAR] \ OVER 2- C! THEN
+  REPEAT 2DROP
+
+;
+
+: >EFIFILENAME0 ( adr1 len adr -- adr ) ASCII-UZ Z/TO\ ; 
+' >EFIFILENAME0 ->DEFER >EFIFILENAME
+
+VARIABLE FILE-BUFF  $101 ALLOT
+VARIABLE FILE-BUFF2 $101 ALLOT
+
+: OPEN-FILE0 ( c-addr u fam -- fileid ior )
+  >R  FILE-BUFF  >EFIFILENAME
+  R>  UZOPEN-FILE
+;
+' OPEN-FILE0 ->DEFER OPEN-FILE
+
+
+: DELETE-FILE ( c-addr u -- flg )
+   FILE-BUFF  >EFIFILENAME
+    ZDELETE-FILE
+;
+
+: RENAME-FILE ( c-addr1 u1 c-addr2 u2 -- ior ) 
+   FILE-BUFF  >EFIFILENAME -ROT
+   FILE-BUFF2 >EFIFILENAME 
+   ZRENAME-FILE
+
+;
+
+: >CREATE  $8000000000000000 OR ;
+
+T: CREATE-FILE ( c-addr u fam -- fileid ior ) \ 94 FILE
+  >CREATE  OPEN-FILE ;
+
+VARIABLE ID_SHIFT
+: ID_SHIFT@ ID_SHIFT @ ;
+
+\ : JKEY#  #JKEY >CPF WPF> ;
+\ : GKEY#  JKEY#  DUP $200 AND ID_SHIFT ! $1FF AND ;
+\ : GKEY?#  #GKEY? >CPF PF> ;
+
+0 VALUE UTT?
+
+: CR_C	$D EMIT $A EMIT ;
+
+
+: ACCEPT1 ( C-ADDR +N -- +N' ) \ GET LINE FROM TERM'L
+   OVER + 1- OVER      \ SA EA A
+   BEGIN
+ KEY       \ SA EA A C
+   DUP $D <>
+  OVER $A <> AND
+  WHILE
+       DUP 27 = IF  DROP DUP C@ EMIT  ELSE
+       DUP EMIT
+       DUP   8  = IF BL EMIT EMIT
+                     2- >R OVER 1- R> UMAX ELSE
+       DUP   $7F  = IF BL EMIT EMIT
+                     2- >R OVER 1- R> UMAX ELSE
+
+       DUP 9  = IF  DROP DUP 8 SPACE
+                    >R OVER R>    \ SA EA SA A
+                    TUCK  -   \ SA EA SA A-SA
+                    8 / 1+ 8 * +  ELSE
+	OVER  C! THEN THEN THEN   THEN
+	1+ OVER UMIN  \ SA EA A
+   REPEAT                          \ SA EA A C
+
+   DROP NIP SWAP -
+
+\ GETXY 2>R  0 2 SETXY .S
+\ 2R> SETXY   
+
+ CR ;
+
+
+' ACCEPT1 ->DEFER ACCEPT
+
+
+: QUERY	( -- )	\ ACCEPT A LINE OF INPUT FROM THE USER TO TIB
+	TIB 180 ACCEPT #TIB !
+	0 >IN !  0 SOURCE + C! ;
+
+
+: OK..  ." OK" CR ;
+' OK.. ->DEFER OK.
+
+VARIABLE CURSTR
+
+' NOOP ->DEFER <PRE>
+
+: FREFILL ( h -- flag )
+  TIB TC/L ROT READ-LINE THROW
+  SWAP
+  #TIB !  0 >IN ! CURSTR 1+!
+  0 SOURCE + C!
+ DUP IF <PRE> THEN
+;
+
+: REFILL ( -- flag ) \ 94 FILE EXT
+  SOURCE-ID  0 > IF ( included text )
+  SOURCE-ID
+ FREFILL
+  EXIT  THEN
+  QUERY TRUE
+;
+
+
+: EVALUATE ( i*x c-addr u -- j*x ) \ 94
+  SOURCE-ID >R SOURCE 2>R >IN @ >R
+  -1 TO SOURCE-ID
+  SOURCE! >IN 0!
+    ['] INTERPRET CATCH
+  R> >IN ! 2R> SOURCE! R> TO SOURCE-ID
+  THROW
+;
+
+: FQUIT
+ BEGIN  REFILL
+
+ WHILE  INTERPRET
+ REPEAT ;
+
+: QUIT
+ BEGIN  REFILL
+ WHILE  INTERPRET OK.
+ REPEAT ;
+
+T: ] STATE ON ;
+T: [ STATE OFF ; IMMEDIATE
+
+ VARIABLE BYE_FLG
+
+\ DP><DDP
+
+444 CONSTANT  CFNAME_SIZE
+ CREATE CURFILENAME 0 , CFNAME_SIZE 255 + ALLOT
+ CREATE ERRFILENAME 0 , CFNAME_SIZE 255 + ALLOT
+
+\ DP><DDP
+
+: SAVEERR
+	DUP SAVEERR? @ AND
+	IF	SOURCE ERRTIB $! >IN_WORD @ ER>IN !
+		SOURCE-ID ERR&S-ID ! CURSTR @ ERR-LINE ! SAVEERR? OFF
+		CURFILENAME COUNT ERRFILENAME $!
+	THEN
+;
+
+VARIABLE CCOUT&OUTPUT
+VARIABLE CCOUTV_EMIT
+VARIABLE CCOUTV_TYPE
+
+0 VALUE CCOUT_#
+
+: ERROR_DO1
+
+	DUP 0= IF DROP BREAK
+	SAVEERR
+	CR ERRTIB COUNT TYPE CR
+\ ER>IN @ BEGIN SPACE 1- DUP 0 MAX 0= UNTIL
+	ERRTIB 1+ ER>IN @ $3F AND 0
+\ . . BYE1
+   ?DO COUNT 9 = IF 9 EMIT ELSE SPACE THEN  LOOP DROP
+ ." ^" \ DROP
+	CR ." ERR=" . 
+	CR  SP0 @ SP!   STATE 0!
+;
+
+' ERROR_DO1 ->DEFER ERROR_DO
+
+: MAIN_CYCLE
+ BEGIN	[COMPILE] [
+	&?MINUS 0!
+	['] QUIT CATCH
+	ERROR_DO
+ AGAIN
+;
+
+\ Copmiler
+
+T: ' PARSE-NAME SFIND 0= IF -13 THROW THEN  ; \ ???????
+
+\ eof
+
+T: ['] '  LIT, ; IMMEDIATE
+
+: CHAR ( "<spaces>name" -- char ) \ 94
+ PARSE-NAME DROP C@ ;
+
+
+: >S, ( addr u -- addr addr1 u )
+  DP @ SWAP DUP ALLOT ;
+
+T: S, ( addr u -- )
+  >S, CMOVE ;
+
+: >S", ( addr u -- addr addr1 u ) 
+ DUP C, >S,   ;
+
+T: S", ( addr u -- ) 
+  >S", CMOVE ;
+
+
+
+T: SLIT, ( adr len -- [ adr len ] )
+	['] (S") _COMPILE, S",
+\	HERE 1 AND IF 0 C, THEN
+\	HERE 3 AND IF 0 W, THEN
+;
+
+T: S"	[CHAR] " PARSE
+	STATE @ IF SLIT, THEN ; IMMEDIATE
+
+: (ABORT'') ROT
+ IF TYPE -2 THROW THEN
+ 2DROP
+;
+
+
+T: ABORT"
+	[COMPILE] S" ['] (ABORT'') COMPILE, ; IMMEDIATE
+
+: CRASH         ( -- ) 
+\                2R@ 2- @L >NAME CR .ID
+ TRUE                ABORT" <- is an Uninitialized execution vector." 
+ ;
+
+' CRASH TO 'CRASH
+
+
+
+: ?COMP ( -> )
+  STATE @ 0= IF -14 THROW THEN
+;
+
+: WORD ( char "<chars>ccc<char>" -- c-addr ) \ 94
+\  DUP PSKIP PARSE 255 MIN
+\  DUP PAD C! PAD 1+ SWAP CMOVE
+\  0 PAD COUNT + C!
+  PARSE PAD $!  PAD ;
+
+: CLIT,
+	['] (C") COMPILE, COUNT S",
+\	HERE 1 AND IF 0xFF C, THEN
+\	HERE 3 AND IF 0xFFFF W, THEN
+;
+
+T: CLITERAL ( addr -- ) 
+  STATE @ IF CLIT, THEN ; IMMEDIATE
+
+
+T: C"
+  [CHAR] " WORD [COMPILE] CLITERAL
+; IMMEDIATE
+
+T: EXIT, $C3 C, ;
+
+THS> .(  0)  MCR .( Wortbirne "EXIT" EXITcom 0) 1 TO TLASTFLG
+
+: BRANCH, ( A -- ) \ ZZZZ IF  THEN
+   0xE9 C,
+  DUP IF THERE 4 + - THEN L,  \  DP @ TO LAST-HERE
+;
+
+
+T: ?BRANCH, ( A -- )
+ 0x84 TO J_COD
+   OPT_INIT SetOP $48 C, $C085 W,  OPT \ test   %rax,%rax
+   OPT_CLOSE	['] DROP INLINE,
+     0x0F C,  J_COD C, 
+  DUP IF THERE 4 + - THEN L, \ DP @ TO LAST-HERE
+ 0 TO J_COD
+;
+
+: >ORESOLVE1 ( A, N -- )
+    HERE
+    OVER -
+    SWAP 4 - L!
+;
+
+: >ORESOLVE ( A, N -- )
+ DUP	IF_FLAG =	IF   DROP >ORESOLVE1 BREAK
+	HEAD_FLAG <>	IF -2007 THROW THEN \ ABORT" Conditionals not paired"
+		>ORESOLVE1
+;
+
+T: ." [COMPILE] S" ['] TYPE COMPILE, ; IMMEDIATE
+
+: ALIGN-NOP ( n -- )
+\ выровнять HERE на n и заполнить NOP
+  HERE DUP ROT 2DUP
+  MOD DUP IF - + ELSE 2DROP THEN
+  OVER - DUP ALLOT 0x90 FILL
+;
+
+T: BEGIN ?COMP HERE BEGIN_FLAG ; IMMEDIATE
+T: UNTIL ?COMP BEGIN_FLAG <> IF -22 THROW THEN  ?BRANCH, ; IMMEDIATE
+T: AGAIN ?COMP BEGIN_FLAG <> IF -22 THROW THEN   BRANCH, ; IMMEDIATE
+T: AHEAD ?COMP	THERE BRANCH,	THERE HEAD_FLAG ; IMMEDIATE
+T: IF	?COMP	THERE ?BRANCH,	THERE  IF_FLAG ; IMMEDIATE
+T: THEN ( A, N -- )
+	?COMP   >ORESOLVE ; IMMEDIATE
+T: ELSE   ( BO BI ADDR ? -- 0 0 ADDR1 ?1 )
+  [COMPILE] AHEAD CS-SWAP [COMPILE] THEN ; IMMEDIATE
+
+T: WHILE  [COMPILE] IF  CS-SWAP ; IMMEDIATE
+T: REPEAT [COMPILE] AGAIN [COMPILE] THEN ; IMMEDIATE
+
+ 
+T: DO            \ Run: n1|u1 n2|u2 -- ; R: -- loop-sys           6.1.1240
+\ *G Begin a *\fo{DO ... LOOP} construct. Takes the end-value and
+\ ** start-value from the stack.
+  ['] (DO) _COMPILE, HERE 0 , HERE 3
+; IMMEDIATE
+
+T: ?DO           \ Run: n1|u1 n2|u2 -- ; R: -- | loop-sys ; 6.2.0620
+\ *G Compile a *\fo{DO} which will only begin loop execution if
+\ ** the loop parameters do not specify an interation count of 0.
+  ['] (?DO) _COMPILE, HERE 0 , HERE 3
+; IMMEDIATE
+
+
+T: LOOP          \ Run: -- ; R: loop-sys1 -- | loop-sys2         6.1.1800
+\ *G The closing statement of a *\fo{DO ... LOOP} construct.
+\ ** Increments the index and terminates when the index crosses
+\ ** the limit.
+  3 ?PAIRS
+ $49 C, $C6FF W, \ inc r14
+ $49 C, $C7FF W, \ inc r15
+  HERE 2+ -  DUP SHORT? \  SetOP SetJP
+  IF
+    0x71 C, C, \ jno short 
+  ELSE
+    4 - 0xF C, 0x81 C, L, \ jno near
+  THEN  \ SetOP
+  $5E41 W, \ pop r14
+  $5F41 W, \ pop r15
+  $59 C, \ pop rcx
+  HERE SWAP !
+ ; IMMEDIATE
+
+T: +LOOP         \ Run: n -- ; R: loop-sys1 -- | loop-sys2       6.1.0140
+\ *G As *\fo{LOOP} except that you specify the increment on the
+\ ** stack. The action of *\fo{n +LOOP} is peculiar when n is
+\ ** negative:
+\ *C   -1 0 ?DO  i .  -1 +LOOP
+\ *P prints *\fo{0 -1}, whereas:
+\ *C   0 0 ?DO  i .  -1 +LOOP
+\ *P prints nothing. This a result of the mathematical trick used
+\ ** to detect the terminating condition. To prevent confusion
+\ ** avoid using *\fo{n +LOOP} with negative *\i{n}.
+  3 ?PAIRS
+	$49 C, $c601 W,	\   	add    %rax,%r14
+	$49 C, $c701 W,	\	add    %rax,%r15
+	['] DROP INLINE,
+  HERE 2+ -  DUP SHORT? \  SetOP SetJP
+  IF
+    0x71 C, C, \ jno short 
+  ELSE
+    4 - 0xF C, 0x81 C, L, \ jno near
+  THEN  \ SetOP
+  $5E41 W, \ pop r14
+  $5F41 W, \ pop r15
+  $59 C, \ pop rcx
+  HERE SWAP !
+ ; IMMEDIATE
+
+T: I
+  ['] DUP INLINE,
+ OPT_INIT
+ SetOP $4c C, $f089 W,  OPT	\	mov %r14,%rax
+ OPT_CLOSE
+ ; IMMEDIATE
+
+: GET-CURRENT ( -- wid ) \ 94 SEARCH
+  CURRENT @ ;
+
+: SET-CURRENT ( wid -- ) \ 94 SEARCH
+  CURRENT ! ;
+
+
+0 VALUE YDP_FL
+\ : YDP_FL  &YDP_FL @ ;
+VARIABLE YDP
+VARIABLE YDP0
+
+: YDP><DP
+  YDP @ DP @
+  YDP ! DP ! ;
+
+: ?YDP><DP
+ YDP_FL \ IS-TEMP-WL 0= AND
+ IF YDP><DP
+ THEN ;
+
+0 VALUE VIEW_LINK
+
+VARIABLE LAST-CFA
+CREATE WARNING 1 ,
+CREATE NEEDUNIQUE  0 ,
+
+: SBUILD ( addr u -- )
+  ?YDP><DP
+	HERE 0 , DUP LAST-CFA !
+	0 L,   ( flags )
+	CURSTR @ L,
+	-ROT WARNING @ NEEDUNIQUE @ OR
+	IF 2DUP GET-CURRENT SEARCH-WORDLIST
+	   DUP NEEDUNIQUE @ AND
+	   ABORT"  unique is need"
+	   IF ( NOUNIQUE ) DROP 2DUP TYPE ."  isn't unique" CR THEN
+	THEN
+	 CURRENT @ @ ,
+	HERE LAST !
+	S", 
+	ALIGN
+	?YDP><DP
+    HERE SWAP ! ( ......... cfa )
+;
+
+: SMUDGE LAST @ CURRENT @ ! ;
+
+T: SHEADER  SBUILD SMUDGE ;
+
+T: HEADER  PARSE-NAME SHEADER ;
+
+T: BUILD  PARSE-NAME SBUILD ;
+
+CREATE &DOCONSTANT	' DOCONSTANT ,
+CREATE &DOVALUE		' DOVALUE ,
+CREATE &DOCREATE	' DOCREATE ,
+CREATE &DOVECT		' DOVECT ,
+
+T: CONSTANT  ( n -- )	HEADER &DOCONSTANT @ COMPILE, , ;
+
+T: VALUE ( n -- )	HEADER &DOVALUE	@ COMPILE, , ;
+
+: CREATED  SHEADER
+  THERE 3 - ALIGNED 3 + DP! THERE LAST @ NAME>C !
+ &DOCREATE @ COMPILE, ;
+
+T: CREATE	PARSE-NAME CREATED ;
+
+T: VARIABLE	CREATE 0 , ;
+
+T: ->DEFER ( cfa -- )	HEADER 	&DOVECT @ COMPILE, , ;
+
+T: DEFER	( -- )  ['] CRASH  ->DEFER ;
+
+T: #DEFINE  BUILD SMUDGE &DOCONSTANT @ COMPILE, INTERPRET , ; 
+
+: DEFER@ ( xt1 i?? i?? xt2 )
+\ xt2 is the execution token xt1 is set to execute. An ambiguous condition exists if xt1 is not
+\ the execution token of a word defined by DEFER, or if xt1 has not been set to execute an
+  >BODY @ ;
+: DEFER! ( xt2 xt1 i?? i?? )
+\ Set the word xt1 to execute xt2. An ambiguous condition exists if xt1 is not for a word
+\ defined by DEFER.
+  >BODY ! ;
+
+T: TO '
+ STATE @
+ IF
+  >BODY  ADDR, ['] !
+   COMPILE,
+ BREAK
+ DEFER!  ; IMMEDIATE
+
+: (DOES>)
+ R>	HERE >R
+	LAST @ NAME>  DP !
+	COMPILE,
+ R> DP !
+;
+
+T: DOES>
+ ['] (DOES>)	COMPILE,
+ [COMPILE] R>
+; IMMEDIATE
+
+T: \ SOURCE NIP >IN ! ; IMMEDIATE
+
+T: ( [CHAR] ) PARSE 2DROP ; IMMEDIATE
+T: .( [CHAR] ) PARSE TYPE ; IMMEDIATE
+
+T: [CHAR] ?COMP CHAR LIT, ; IMMEDIATE
+
+: [DEFINED] ( -- f ) \ "name"
+  PARSE-NAME SFIND  IF DROP TRUE ELSE 2DROP FALSE THEN
+; IMMEDIATE
+
+: [UNDEFINED]  ( -- f )   [COMPILE] [DEFINED] 0= ; IMMEDIATE
+
+T: \+ [COMPILE] [UNDEFINED]	IF [COMPILE] \ THEN ; IMMEDIATE
+T: \- [COMPILE] [DEFINED]	IF [COMPILE] \ THEN ; IMMEDIATE
+
+: FIND ( c-addr -- c-addr 0 | xt 1 | xt -1 ) \ 94 SEARCH
+  DUP >R COUNT SFIND
+  DUP 0= IF NIP NIP R> SWAP ELSE RDROP THEN
+;
+
+: GET-ORDER ( -- widn ... wid1 n ) \ 94 SEARCH
+  SP@ >R 0 >R
+  CONTEXT
+  BEGIN DUP @ ?DUP
+  WHILE >R CELL+
+  REPEAT  DROP
+  BEGIN R> DUP 0=
+  UNTIL DROP
+  R> SP@ - 8 / 1-
+;
+
+: BLANK BL FILL ;
+
+: ID. ( NFA[E] -> )  COUNT TYPE ;
+
+T: LATEST ( -> NFA )    CURRENT @ @ ;
+
+\ : [COMPILE] ' COMPILE, ; IMMEDIATE
+
+T: [COMPILE] ' COMPILE, ; IMMEDIATE
+
+T: POSTPONE
+\  ?COMP
+\ CR ." P=" 
+  PARSE-NAME \ 2DUP U. U.
+  SFIND DUP
+ 0=	IF -13 THROW THEN
+ 1 = 	IF	COMPILE,
+	ELSE	LIT, ['] COMPILE, COMPILE,
+	THEN
+; IMMEDIATE
+
+T: BREAK  EXIT, [COMPILE] THEN ; IMMEDIATE
+
+: UPPER ( A L -- )
+         OVER + SWAP
+         ?DO I C@ DUP [CHAR] Z U>
+            IF  0xDF AND
+            THEN  I C!
+         LOOP ;
+
+T: 1RP@  ['] RP@   COMPILE,
+         ['] CELL+ COMPILE,  ; IMMEDIATE
+
+T: 2RP@  [COMPILE] 1RP@
+         ['] CELL+ COMPILE,  ; IMMEDIATE
+
+T: 3RP@  [COMPILE] 2RP@
+         ['] CELL+ COMPILE,  ; IMMEDIATE
+
+T: 4RP@  [COMPILE] 3RP@
+         ['] CELL+ COMPILE,  ; IMMEDIATE
+
+T: VOC-NAME. ( wid -- )
+  DUP CELL+ CELL+ @ DUP
+ IF ID. DROP BREAK
+   DROP ." <NONAME>:" U. 
+;
+
+: VOCS
+        VOC-LIST
+        BEGIN @ DUP WHILE
+               DUP CELL-  VOC-NAME. SPACE
+        REPEAT
+        DROP
+;
+
+VARIABLE RP0
 
 \ EOF
 
-CODE test3330
+: WORDLIST ( --- wid)
+  HERE	0 , 
+  HERE  VOC-LIST @ , VOC-LIST !
+	0 ,
+\ Make a new wordlist and give its address.
+;
 
-	push   HERE (%rip) \  ff 35 77 00 00 00    # 0x83
 
-	push   ' TEST333 (%rip) \  ff 35 77 00 00 00    # 0x83
+T: VOCABULARY ( "<spaces>name" -- )
+  WORDLIST
+  CREATE DUP ,
+   CELL+ \ link
+   CELL+ LAST @ SWAP ! \ 
+  DOES> @ CONTEXT ! ;
 
-	pop    ' TEST333 (%rip) \  8f 05 77 00 00 00    # 0x7d
-	push   ' TEST333 (%rip) \  ff 35 77 00 00 00    # 0x83
-	call   ' TEST333 (%rip) \  ff 15 77 00 00 00    # 0x89
-	jmp    ' TEST333 (%rip) \  ff 25 77 00 00 00    # 0x8f
+: VARY ( "<spaces>name" -- )
+  CREATE 77 ,
+  DOES> @  ;
 
-	DUP,
-	mov    $-1,%Rax
-\	movabs  ' test333 ,%al
-	NEXT
-END-CODE
 
-CREATE test3331
- $0f C, 00  C, $c0 C,
- $0f C, 01  C, $c0 C,
+T: ALSO ( --- )
+\ Duplicate the last wordlist in the search order.
+ CONTEXT CONTEXT  CELL+ CONTEXT_SIZE CELL-  CMOVE> ;
 
+T: FORTH FORTH-WORDLIST CONTEXT ! ;
 
-\ Push the address of the top element of the return stack 
-\ onto the parameter stack.
-CODE RP@	(  -- addr )
-	lea    -0x8(%rbp),%rbp
-	mov    %rax,0x0(%rbp)
-	lea    0x8(%rsp),%rax
-	NEXT
-END-CODE
+T: ONLY ( --- )
+ FORTH CONTEXT CELL+ 0! ;
 
-CODE	DROP	\ remove element of parameter stack .
-CODL	D>S
-	DROP,
-CODL	NOOP
-	NEXT
-END-CODE
 
-' NOOP TO 'CRASH
-' NOOP TO 'NOOP
-' DROP TO 'DROP
+T: PREVIOUS ( --- )
+\ Remove the last wordlist from search order.
+ CONTEXT CELL+ CONTEXT CONTEXT_SIZE CMOVE  ;
 
-\ Set the return stack pointer to n .
-CODE RP!	( N -- )
-	pop    %rbx
-	mov    %rax,%rsp
-	mov    0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	jmp	%rbx
-END-CODE
+: SET-ORDER
+  DUP -1 = IF DROP ONLY BREAK
+  DUP 0= IF CONTEXT ! BREAK
+  0
+  DO CONTEXT I CELLS +
+     DUP CELL+ 0!  !
+  LOOP
+;
 
+T: ORDER ( -- ) \ 94 SEARCH EXT
+  GET-ORDER ." Context: "
+  0 ?DO ( DUP .) VOC-NAME. SPACE LOOP CR
+  ." Current: " GET-CURRENT VOC-NAME. CR
+;
 
-CODE 2RDROP
-	mov	(%rsp),%rbx
-	lea	0x18(%rsp),%rsp
-	jmp	%rbx
-END-CODE
 
-\ Pop two items from return stack onto parameter stack
-CODE 2R>	( -- D.lo D.hi )
-	mov    (%rsp),%rbx
-	mov    %rax,-0x8(%rbp)
-	mov    0x10(%rsp),%rcx
-	mov    0x8(%rsp),%rax
-	mov    %rcx,-0x10(%rbp)
-	lea    -0x10(%rbp),%rbp
-	lea    0x18(%rsp),%rsp
-	jmp	%rbx
-END-CODE
+T: HEX HEX ;
 
 
-\ Push a copy of the top two items of the return stack onto the parameter stack.
-CODE 2R@	( -- D.lo D.hi )
-	mov    %rax,-0x8(%rbp)
-	mov    0x8(%rsp),%rax
-	mov    0x10(%rsp),%rbx
-	mov    %rbx,-0x10(%rbp)
-	lea    -0x10(%rbp),%rbp
-	NEXT
-END-CODE
+: ALIAS  ( cfa -- ) 
+ PARSE-NAME SHEADER
+ LAST @  NAME>C !
+;
 
+T: : PARSE-NAME  SBUILD  ] ;
 
-\ Pop two items from parameter stack, push onto return stack.
-CODE 2>R	( D -- )
-	pop    %rbx
-	push   0(%rbp)
-	push   %rax
-	lea    0x10(%rbp),%rbp
-	mov    -0x8(%rbp),%rax
-	jmp	%rbx
-END-CODE
+T: ; ?COMP  EXIT,
+ SMUDGE
+ [COMPILE] [ ; IMMEDIATE
 
-CODE SP@	( -- N )
-	lea    -0x8(%rbp),%rbp
-	mov    %rax,0x0(%rbp)
-	mov    %rbp,%rax
-	NEXT
-END-CODE
+1 [IF]
+T: FIELD  ( offset size "new-name< >" -- offset+size )
+      : OVER
+        DUP IF   DUP  LIT,  ['] + COMPILE,
+            THEN DROP
+       [COMPILE] ;
+       + ;  
+[ELSE]
+T: FIELD
+  CREATE OVER , + 
+  DOES> @ +
+;
+[THEN]
 
-\ Set the parameter stack pointer to specified value.
-CODE SP!	( n -- )
-	lea    0x8(%rax),%rbp
-	mov    -0x8(%rbp),%rax
-	NEXT
-END-CODE
 
-CODE PERFORM	( ... [tx] -- ...' )
-CODL @EXECUTE
-	mov    (%rax),%rax
-\ Execute the word whose CFA is on the stack
-CODL EXECUTE	( ... tx -- ...' )
-	mov    %rax,%rdx
-	mov    0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	jmp    %rdx
-END-CODE
+1 CONSTANT &IMMEDIATE
 
-' PERFORM TO 'PERFORM
-' EXECUTE TO 'EXECUTE
+T: IMMEDIATE
+  &IMMEDIATE LAST @ NAME>F LOR!
+;
 
-CODE SL@
-	mov    (%rax),%eax
-	cltq
-	NEXT
-END-CODE
+VARIABLE EMITVAR
 
-CODE L@
-	mov    (%rax),%eax
-	NEXT
-END-CODE
-
-\ ARM Forth word @   ( addr -- n )
-\ Fetch a value from addr
-CODE @		( A -- N )
-	mov    (%rax),%rax
-	NEXT
-END-CODE
-
-' @ TO 'GET
-
-CODE C@		( A -- c )
-	movzbl (%rax),%eax
-	NEXT
-END-CODE
-
-CODE W@		( A -- c )
-	movzwl (%rax),%eax
-	NEXT
-END-CODE
-
-
-\ Store the least significant 8 bits of char at the specified addr
-CODE C!		( N,A -- )
-	mov    0x0(%rbp),%dl
-	mov    %dl,(%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-
-CODE W!	( N,A -- )
-	mov    0x0(%rbp),%edx
-	mov    %dx,(%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE L!	( N,A -- )
-	mov    0x0(%rbp),%edx
-	mov    %edx,(%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-
-\  Store value n into the address addr
-CODE !	( N,A -- )
-	mov    0x0(%rbp),%rdx
-	mov    %rdx,(%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE +!		( N,A -- )
-	mov    0x0(%rbp),%rdx
-	add	%rdx, (%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE C+!		( N,A -- )
-	mov    0x0(%rbp),%rdx
-	add	%dl, (%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE L+!		( N,A -- )
-	mov    0x0(%rbp),%rdx
-	add	%edx, (%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE LOR!		( N,A -- )
-	mov    0x0(%rbp),%rdx
-	or	%edx, (%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE OR!		( N,A -- )
-	mov    0x0(%rbp),%rdx
-	or	%Rdx, (%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE XOR!		( N,A -- )
-	mov    0x0(%rbp),%rdx
-	xor	%Rdx, (%rax)
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE 1+!	( N A -- )
-	incq   (%rax)
-	mov    0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-\ [A] = 0
-CODE 0!		( A -- )
-CODL OFF		( A -- )
-	movq   $0,(%rax)
-	DROP,
-	NEXT
-END-CODE
-
-CODE ON		( A -- )
-	movq   $-1,(%rax)
-	DROP,
-	NEXT
-END-CODE
-
-\  Fetch a 64 bit value from addr
-CODE 2@		( addr -- low32bits high32bits )
-	mov 8(%rax), %rdx
-	lea -8(%rbp), %rbp
-	mov %rdx, (%rbp)
-	mov (%rax), %rax
-
-	NEXT
-END-CODE
-
-CODE 2!		( D A -- )
-	mov (%rbp), %rdx
-	mov %rdx, (%rax)
-	mov 8(%rbp), %rdx
-     	mov %rdx, 8(%rax)
-	mov 0x10(%rbp), %rax
-	lea 0x18(%rbp),%rbp
-	NEXT
-END-CODE
-
-
-CODE COUNT	( a -- a+1 c ) 
-	lea    -0x8(%rbp),%rbp
-	lea    0x1(%rax),%rdx
-	movzbq (%rax),%rax
-	mov    %rdx,0x0(%rbp)
-	NEXT
-END-CODE
-
-CODE U>D
-	lea    -0x8(%rbp),%rbp
-	mov    %rax,0x0(%rbp)
-	xor    %rax,%rax
-	NEXT
-END-CODE
-
-CODE S>D
-	DUP,
-	sar    $0x3f,%rax
-	NEXT
-END-CODE
-
-CODE C>S ( c -- n )
-	movsbq	%al,%rax
-	NEXT
-END-CODE
-
-CODE W>S ( c -- n )
-	movswq %ax,%rax
-	NEXT
-END-CODE
-
-CODE L>S ( c -- n )
-	movslq %eax,%rax
-	NEXT
-END-CODE
-
-CODE MIN	( N1,N2 -- MIN )
-	cmp    0x0(%rbp),%rax
-	cmovg  0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE UMIN	( N1,N2 -- MIN )
-	cmp    0x0(%rbp),%rax
-	cmova  0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE MAX	( N1,N2 -- MAX )
-	cmp    0x0(%rbp),%rax
-	cmovl  0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-\ ÌÀÊÑÈÌÓÌ
-CODE UMAX	( N1,N2 -- MAX )
-	cmp    0x0(%rbp),%rax
-	cmovb  0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-\ Return absolute value of top stack item
-CODE ABS	( n -- +n )
-	cqto
-	xor %rdx, %rax
-	sub %rdx, %rax
-	NEXT
-ASM_END
-
-\  If n1 is equal to n2, return TRUE. Otherwise FALSE.
-CODE =		( a b -- f )
-\  If n is equal to 0, return TRUE. Otherwise FALSE.
-	xor    0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-CODL 0=		( a -- f )
-     	sub    $1 , %rax
-     	sbb	%rax,%rax
-
-	NEXT
-END-CODE
-
-' =	TO '=
-
-CODE  D= ( xd1 xd2 -- flag ) \ 94 DOUBLE
-\ flag is true if and only if xd1 is bit-for-bit the same as xd2
-	mov    (%rbp),%rdx
-	xor    8(%rbp),%rax
-	xor    0x10(%rbp),%rdx
-	or     %rdx,%rax
-	sub    $0x1,%rax
-	sbb    %rax,%rax
-	lea    0x18(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE D0=		( a b -- f )
-	or     0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	sub    $0x1,%rax
-	sbb    %rax,%rax
-	NEXT
-END-CODE
-
-CODE >		( a b -- f )
-	cmp	(%rbp),%rax
-	setl	%al
-	neg	%al
-	movsb	%al,%rax
-	lea	8(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE <		( a b -- f )
-	cmp	(%rbp),%rax
-	setg	%al
-	neg	%al
-	movsb	%al,%rax
-	lea	8(%rbp),%rbp
-	NEXT
-END-CODE
-
-\ If n1 is not equal to n2, return TRUE.  Otherwise FALSE.
-CODE <>		( a b -- f )
-	xor    0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-\ If n is not equal to 0, return TRUE.  Otherwise FALSE.
-CODL 0<>		( a b -- f )
-	neg    %rax
-	sbb    %rax,%rax
-	NEXT
-END-CODE
-
-CODE 0>		( n -- f )
-	neg    %rax
-\ Returns true if top is negative, ie sign bit is on.
-CODL 0<		( n -- f )
-	sar    $0x3f,%rax
-	NEXT
-END-CODE
-
-CODE U>	( n1 n2 -- f )
-	cmp    0x0(%rbp),%rax
-	sbb    %rax,%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE U< ( a b -- f )
-	cmp    %rax,0x0(%rbp)
-	sbb    %rax,%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE WITHIN
-	mov    0x8(%rbp),%rdx
-	sub    0x0(%rbp),%rax
-	sub    0x0(%rbp),%rdx
-	sub    %rax,%rdx
-	sbb    %rax,%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE ANDC	( N1,N2 -- N )
-	not    %rax
-\ Perform bit-wise logical AND of top two items.
-CODL AND	( N1,N2 -- N )
-	and    0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-
-\ Perform bit-wise logical OR of top two items on parameter stack.
-CODE OR		( N1,N2 -- N )
-	or     0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-\ Perform bit-wise logical XOR of top two items on parameter stack.
-CODE XOR	( N1,N2 -- N )
-	xor	0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-
-
-\ Logically invert the bits of top stack item.
-CODE INVERT	( N -- N1 )
-CODL NOT	( N -- N1 )
-	not    %rax
-	NEXT
-ASM_END
-
-\ Negate number on top of stack.
-CODE NEGATE	( n - -n)
-	neg    %rax
-	NEXT
-ASM_END
-
-CODE DNEGATE ( d - -d)
-	mov    0x0(%rbp),%rdx
-	neg    %rax
-	neg    %rdx
-     	sbb    $0x0,%rax \ $48 C, $83 C, $d8 C, $00 C, \
-	mov    %rdx,0x0(%rbp)
-	NEXT
-ASM_END
-
-CODE -		( N1,N2 -- N1-N2 )
-	neg    %rax
-CODL +		( N1 N2 -- N1+N2 )
-	add    0x0(%rbp),%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-
-CODE D+ ( d1|ud1 d2|ud2 -- d3|ud3 ) \ 94 DOUBLE
-	mov    0x0(%rbp),%rdx
-	add    %rdx,0x10(%rbp)
-	adc    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-ASM_END
-
-CODE D- ( d1|ud1 d2|ud2 -- d3|ud3 ) \ 94 DOUBLE
-	mov    (%rbp),%rdx
-	sub    %rdx,0x10(%rbp)
-	mov    8(%rbp),%rdx
-	sbb    %rax,%rdx
-	mov    %rdx,%rax
-	lea	0x10(%rbp),%rbp
-	NEXT
-ASM_END
-
-CODE D< ( d1 d2 -- flg ) \ 94 DOUBLE
-	mov    (%rbp),%rdx
-	cmp    %rdx,0x10(%rbp)
-	sbb    %rax,0x8(%rbp)
-	setl   %al
-	neg    %al
-	movsbq %al,%rax
-	lea	0x18(%rbp),%rbp
-	NEXT
-ASM_END
-
-CODE D2/ \ d1 -- d1/2
-	sar    %rax
-	$48 C, $d1 C, $5d C, 0 C, \ rcrq   0x0(%rbp)
-	NEXT
-ASM_END
-
-CODE CELL+	( N -- N+8 )
-	lea    4(%rax),%rax
-CODL 4+		( N -- N+4 )
-	inc    %rax
-CODL 3+		( N -- N+2 )
-	inc    %rax
-CODL 2+		( N -- N+2 )
-	inc    %rax
-CODL 1+		( N -- N+1 )
-CODL CHAR+
-	inc    %rax
-	NEXT
-END-CODE
-\ 4 TR> DECIMAL 1+ .
-
-CODE CELL-	( N -- N-8 )
-	lea    -4(%rax),%rax
-CODL 4-		( N -- N+4 )
-	lea    -2(%rax),%rax
-CODL 2-		( N -- N-2 )
-	dec    %rax
-CODL 1-		( N -- N-1 )
-	dec    %rax
-	NEXT
-END-CODE
-
-CODE CELLS	( N -- 8*N )
-	lea    (%rax,%rax,1),%rax
-CODL 4*	( N -- 4*N )
-	lea    (%rax,%rax,1),%rax
-CODL 2*		( N -- 2*N )
-	lea    (%rax,%rax,1),%rax
-	NEXT
-END-CODE
-
-CODE 2/		( N -- N/2 )
-	sar    %rax
-	NEXT
-END-CODE
-
-CODE U2/        ( N -- N/U2 )
-	shr    %rax
-        NEXT
-END-CODE
-
-\ 32*32=lo(32)
-CODE *		( a b -- a*b )
-	imulq  0x0(%rbp)
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE /
-	mov    %rax,%rcx
-	mov    0x0(%rbp),%rax
-	cqto
-	idiv   %rcx
-	lea    0x8(%rbp),%rbp
-	NEXT
-ASM_END
-
-CODE MOD
-	mov    %rax,%rcx
-	mov    0x0(%rbp),%rax
-	cqto
-	idiv   %rcx
-	lea    0x8(%rbp),%rbp
-	mov    %rdx,%rax
-	NEXT
-ASM_END
-
-
-CODE U/
-	mov    %rax,%rcx
-	mov    0x0(%rbp),%rax
-	xor    %rdx,%rdx
-	lea    0x8(%rbp),%rbp
-	div    %rcx
-	NEXT
-ASM_END
-
-CODE UM*
-	mulq   0x0(%rbp)
-	mov    %rax,0x0(%rbp)
-	mov    %rdx,%rax
-	NEXT
-ASM_END
-
-CODE M*
-     	imulq  0x0(%rbp)
-	mov    %rax,0x0(%rbp)
-	mov    %rdx,%rax
-	NEXT
-ASM_END
-
-CODE /MOD ( n1 n2 -- rem quot )
-	mov    %rax,%rcx
-	mov    0x0(%rbp),%rax
-	cqto
-	idiv   %rcx
-	mov    %rdx,0x0(%rbp)
-	NEXT
-ASM_END
-
-CODE UM/MOD
-	mov    %rax,%rcx
-	mov    0x0(%rbp),%rdx
-	mov    0x8(%rbp),%rax
-	div    %rcx
-	lea    0x8(%rbp),%rbp
-	mov    %rdx,0x0(%rbp)
-	NEXT
-ASM_END
-
-\ duplicate n1 if <> 0
-CODE ?DUP	( N -- N,N )  ( 0 -- 0 )
-     	test     %rax,%rax
-	je	0f
-CODL DUP	( N -- N,N )  \ Duplicate the top element of the stack.
-	DUP,
-0:	NEXT
-ASM_END
-\ END-CODE
-' DUP TO 'DUP
-
-\ Duplicate double element of data stack.
-CODE 2DUP	(  a b -- a b a b )
-	mov    0x0(%rbp),%rdx
-	mov    %rax,-0x8(%rbp)
-	mov    %rdx,-0x10(%rbp)
-	lea    -0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-\ Exchange the top two items on the stack
-CODE SWAP	( N1,N2 -- N2,N1 )
-	mov    0x0(%rbp),%rdx
-	mov    %rax,0x0(%rbp)
-	mov    %rdx,%rax
-	NEXT
-END-CODE
-
-CODE CS-SWAP
-	nop
-\ Swap double element of data stack.
-CODL 2SWAP	( n1 n2  n3 n4 -- n3 n4  n1 n2 )
-	mov    0x0(%rbp),%rcx
-	mov    0x8(%rbp),%rdx
-	mov    0x10(%rbp),%rbx
-	mov    %rcx,0x10(%rbp)
-	mov    %rax,0x8(%rbp)
-	mov    %rbx,0x0(%rbp)
-	mov    %rdx,%rax
-	NEXT
-END-CODE
-
-\ Remove double element of data stack.
-CODE CS-DROP
-	nop
-CODL 2DROP  	( D -- )
-	mov    0x8(%rbp),%rax
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE CS-PICK  ( xu .. x0 u -- xu .. x0 xu )
-	lea    (%rax,%rax),%rax
-	mov    8(%rbp,%rax,8),%rdx
-	lea	-0x08(%rbp),%rbp
-	mov	%rdx,(%rbp)
-	mov    8(%rbp,%rax,8),%rax
-	ret
-END-CODE
-
-CODE 2NIP	( D -- )
-	mov    (%rbp),%rdx
-	lea    0x10(%rbp),%rbp
-	mov    %rdx,(%rbp)
-	NEXT
-END-CODE
-
-\ Push a copy of the second stack item.
-CODE OVER	( n1 n2 -- n1 n2 n1 )
-	lea    -0x8(%rbp),%rbp
-	mov    %rax,0x0(%rbp)
-	mov    0x8(%rbp),%rax
-	NEXT
-END-CODE
-
-' OVER	TO 'OVER
-
-CODE 2OVER	( n1 n2 -- n1 n2 n1 )
-	mov 16(%rbp),%rdx
-	mov %rax,-8(%rbp)
-	mov %rdx,-16(%rbp)
-	mov 8(%rbp),%rax
-	lea -16(%rbp),%rbp
-	NEXT
-END-CODE
-
-
-CODE PICK	( Nm,...,N1,K -- Nm,...,N1,Nk )
-	mov    (%rbp,%rax,8),%rax
-	NEXT
-END-CODE
-
-\ CODE PLUCK	( N1 N2 N3 -- N1 N2 N3 N1 ) 
-\ Tuck the first element under the second one.
-CODE TUCK	( n1 n2 --- n2 n1 n2 )
-	lea    -0x8(%rbp),%rbp
-	mov    0x8(%rbp),%rdx
-	mov    %rax,0x8(%rbp)
-	mov    %rdx,0x0(%rbp)
-	NEXT
-END-CODE
-
-CODE ROLL          \ nn..n0 n -- nn-1..n0 nn
-\ *G Rotate the order of the top N stack items by one place such
-\ ** that the current top of stack becomes the second item and
-\ ** the Nth item becomes TOS. See also *\fo{ROT}.
-	test   %rax,%rax
-	je     1f
-	mov    %rax,%rcx
-	lea    (,%rax,8),%rax
-	mov    %rbp,%rdx
-	add    %rax,%rdx
-	mov    (%rdx),%rbx
-2:	lea    -8(%rdx),%rdx
-	mov    (%rdx),%rax
-	mov    %rax,8(%rdx)
-	dec    %rcx
-	jne    2b
-	mov    %rbx,%rax
-	jmp    3f
-1:	mov    (%rbp),%rax
-3:	lea    8(%rbp),%rbp
-	NEXT
-END-CODE
-
-
-
-\ Delete the second stack item.
-CODE NIP	( n1 n2 -- n2 )
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-\ Rotate top three stack values, bringing the third item to the top.
-CODE ROT	( n1 n2 n3 -- n2 n3 n1 )
-	mov    0x0(%rbp),%rdx
-	mov    %rax,0x0(%rbp)
-	mov    0x8(%rbp),%rax
-	mov    %rdx,0x8(%rbp)
-	NEXT
-END-CODE
-
-
-\ Rotate top three stack values, bringing the top item to the third.
-CODE -ROT	( n1 n2 n3 -- n3 n1 n2 )
-	mov    0x8(%rbp),%rdx
-	mov    %rax,0x8(%rbp)
-	mov    0x0(%rbp),%rax
-	mov    %rdx,0x0(%rbp)
-	NEXT
-END-CODE
-
-
-CODE ARSHIFT	( a b -- a>>b ) \ arithmetic shift
-	mov    %al,%cl
-	mov    0x0(%rbp),%rax
-	sar    %cl,%rax
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE RSHIFT	( a b -- a>>b )
-CODL >>
-	mov    %al,%cl
-	mov    0x0(%rbp),%rax
-	shr    %cl,%rax	
-	lea    0x8(%rbp),%rbp
-	NEXT
-END-CODE
-
-
-CODE LSHIFT	( a b -- a<<b )
-CODL <<
-	mov    %al,%cl
-	mov    0x0(%rbp),%rax
-	shl    %cl,%rax
-	lea    0x8(%rbp),%rbp
-
-	NEXT
-END-CODE
-
-
-CODE TlsIndex!
-     	mov    %rax,%r12
-	' DROP BRANCH,
-END-CODE
-
-CODE TlsIndex@
-	lea    -0x8(%rbp),%rbp
-	mov    %rax,0x0(%rbp)
-	mov	%r12, %rax
-	NEXT
-END-CODE
-
-CODE CDR
-     	mov    -8(%rax),%rax
-	NEXT
-END-CODE
-
-CODE NAME>C
-	lea    -0x18(%rax),%rax
-	NEXT
-END-CODE
-
-CODE NAME>
-	mov    -0x18(%rax),%rax
-	NEXT
-END-CODE
-
-CODE NAME>F
-	lea    -0x10(%rax),%rax
-	NEXT
-END-CODE
-
-CODE ERASE ( addr len  -- )
-	DUP,
-	MOV	$0,%rax
-CODL FILL ( addr len c -- )
-	mov    0x0(%rbp),%rcx
-	jrcxz  0f
-	mov    0x8(%rbp),%rdi
-	rep stosb \ %al,%es:(%rdi)
-0:	mov    0x10(%rbp),%rax
-	lea    0x18(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE CMOVE>
-	mov    %rax,%rcx
-	mov    0x0(%rbp),%rdi
-	mov    0x8(%rbp),%rsi
-	std    
-	add    %rcx,%rdi
-	add    %rcx,%rsi
-	dec    %rsi
-	dec    %rdi
-	rep movsb \ %ds:(%rsi),%es:(%rdi)
-	cld    
-	lea    0x18(%rbp),%rbp
-	mov    -0x8(%rbp),%rax
-	NEXT
-END-CODE
-
-
-CODE CMOVE 
-	mov    %rax,%rcx
-	mov    0x0(%rbp),%rdi
-	mov    0x8(%rbp),%rsi
- 	cld    
-	rep movsb \ %ds:(%rsi),%es:(%rdi)
-	lea    0x18(%rbp),%rbp
- 	mov    -0x8(%rbp),%rax
-	NEXT
-END-CODE
-
-CODE DOVALUE
-	nop
-CODL DOCONSTANT
-	lea    -0x8(%rbp),%rbp
-	mov    %rax,0x0(%rbp)
-	pop    %rax
-	mov    (%rax),%rax
-	NEXT
-END-CODE
-
-CODE DOCREATE
-	lea    -0x8(%rbp),%rbp
-	mov    %rax,0x0(%rbp)
-	pop    %rax
-	NEXT
-END-CODE
-
-CODE DOVECT
-	pop    %rbx
-	mov    (%rbx),%rbx
-	jmp	%rbx
-END-CODE 
-
-CREATE &NOOP 'NOOP ,
-
-CODE EMIT1
-	mov    %eax,%edi
-
-        mov     %rsp, %rbx
-	and	$0xf, %rbx
-        jne      0f
-	push	&NOOP (%rip)   // for mmx
-0:	push	%rbp
-	mov     %rsp, %rbp
-	call	' putch
-	pop	%rbp
-
-	DROP,
-	NEXT
-END-CODE
-
-
-CODE EMIT1_
-	mov    %eax,%edi
-
-\	lea	'NOOP (%rax),%rbx  \ // for mmx
-	push	&NOOP (%rip)
-0:	push	%rbp
-	mov     %rsp, %rbp
-	call	' putch
-	pop	%rbp
-
-	DROP,
-	NEXT
-END-CODE
-
-CODE KEY1
-	DUP,
-	call   ' getch
-	NEXT
-END-CODE
-
-CODE KEY2
-	DUP,
-	call   ' getkey
-	NEXT
-END-CODE
-
-CODE KEY?1
-	DUP,
-	call   ' kbhit
-	NEXT
-END-CODE
-
-CODE COLOR!0
-	mov    %eax,%edi
-	call   ' GCCSetAttribute
-	DROP,
-	NEXT
-END-CODE
-
-CODE SETXY0
-	mov	(%rbp),%esi
-	mov	%eax,%edi
-
-        mov     %rsp, %rbx
-	and	$0xf, %rbx
-        jne      0f
-	push	&NOOP (%rip)   // for mmx
-0:	push	%rbp
-	mov     %rsp, %rbp
-	call	' GCCSetXY
-	pop	%rbp
-
-	mov	8(%rbp),%rax
-	lea	0x10(%rbp),%rbp
-
-	NEXT
-END-CODE
-
-
-CODE GETMAXXY0 ( -- x y flg )
-	lea    -0x18(%rbp),%rbp
-	mov	%rax,0x10(%rbp)
-	lea    8(%rbp),%rsi
-	lea    (%rbp),%rdi
-	call	' GCCSCRSIZE
-	NEXT
-END-CODE
-
-CODE TEXT_OUTPUT_MODE
-	DUP,
-	call   ' GCCTEXT_OUTPUT_MODE
-	NEXT
-END-CODE
-
-
-\ %rdi %esi %edx
-CODE UZOPEN-FILE ( u16<name>  fam -- fileid ior ) 
-	mov    %rax,%rdx
-	mov    (%rbp),%rsi
-	lea    (%rbp),%rdi
-	call   ' GCCOpenFile
-	NEXT
-END-CODE
-
-CODE READ-FILE ( c-addr u1 fileid -- u2 ior ) 
-        mov    8(%rbp),%rdx
-        lea    (%rbp),%esi
-        mov    %eax,%edi
-	call   ' GCCReadFile
-        mov    (%rbp),%edx
-        mov    %edx,8(%rbp)
-	lea    0x8(%rbp),%rbp
-\	xor	%eax,%eax      \ !!!!!!!!!!!!
-	NEXT
-END-CODE
-
-CODE WRITE-FILE ( c-addr u1 fileid -- ior ) 
-        mov    8(%rbp),%rdx
-        lea    (%rbp),%esi
-        mov    %eax,%edi
-	call   ' GCCWriteFile
-	lea    0x10(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE FILE-POS ( fileid -- u ior ) 
-	lea    -8(%rbp),%rbp
-	mov    %eax,%edi
-	lea    (%rbp),%rsi
-	call   ' GCCGetPosition
-	NEXT
-END-CODE
-
-CODE FILE-POSITION ( fileid -- ud ior ) 
-	lea    -0x10(%rbp),%rbp
-	mov    %eax,%edi
-	lea    8(%rbp),%rsi
-	call   ' GCCGetPosition
-	mov    $0,(%rbp)
-	NEXT
-END-CODE
-
-CODE REPOS-FILE ( u fileid -- ior ) 
-	mov    %eax,%edi
-	mov    (%rbp),%rsi
-	call   ' GCCSetPosition
-	lea     8(%rbp),%rbp
-	NEXT
-END-CODE
-
-CODE FL-SIZE ( fileid -- size ) 
-	mov    %eax,%edi
-	call   ' GCCFileSize
-	NEXT
-END-CODE
-
-CODE CLOSE-FILE ( fileid -- ior )
-	mov    %eax,%edi
-	call   ' GCCCloseFile
-	xor	%eax,%eax
-	NEXT
-	NEXT
-END-CODE
-
-
-CODE ZDELETE-FILE
-	NEXT
-END-CODE
-
-CODE ZRENAME-FILE
-	NEXT
-END-CODE
-
-CODE ALLOCATE ( u -- a-addr ior ) 
-	mov    %eax,%edi
-	call   ' AllocatePool
-	DUP,
-	xor	%eax, %eax
-	NEXT
-END-CODE
-
-
-CODE FREE ( u --  ior ) 
-	mov    %eax,%edi
-	call   ' FreePool
-	NEXT
-END-CODE
-
-CODE HALT
-	mov    %rax,%rdi
-	call   '  C_HALT
-	NEXT
-END-CODE
-
-CODE ZCOUNT ( addr -- addr len )
-	lea     -8(%rbp),%rbp
-	mov     %rax,%rdx
-0:	mov     (%rax),%cl
- 	lea     1(%rax),%rax
-	or      %cl,%cl
-	jne     0b
-	lea     -1(%rax),%rax
-	sub     %rdx,%rax
-	mov     %rdx,(%rbp)
-	NEXT
-END-CODE
-\ EOF
-
-CODE (?DO) (  limit index -- )
-	cmp    0x0(%rbp),%rax	\ index = limit
-	je     0f
-CODL (DO) (  limit index -- )
-	pop    %rdx		\ rdx = return address
-	mov    (%rdx),%rcx	\ exit address
-	lea    0x8(%rdx),%rdx	\ step over it
-	push   %rcx		\ rcx = exit address  
-	push   %r15		\ r15 = old index - limit - msb
-	push   %r14		\ r14 = old index     
-
-	mov    %rax,%r15	\ rbx = index, r15 = index                                     
-	sub    0x0(%rbp),%r15	\ r15 = index - limit 
-	btc    $0x3f,%r15	\ r15 = index - limit  - msb ; BTC=complement
-	mov    %rax,%r14 	\ r14 = index
-
-	mov    0x8(%rbp),%rax	\ restore TOS
-	lea    0x10(%rbp),%rbp	\ step data stack                               
-
-	jmp	%rdx
-0:	mov    0x8(%rbp),%rax	\ restore TOS
-	lea    0x10(%rbp),%rbp	\ step data stack
-	pop    %rdx		\ rdx = return address
-	mov    (%rdx),%rdx	\ exit address
-	jmp	%rdx
-END-CODE
-
-' (?DO) TO '(?DO)
-' (DO) TO '(DO)
-
-CODE LEAVE
-\ RSP+18: ESP+C:  exit address
-\ RSP+10: ESP+8:  old index-limit-$8000.0000  (incremented by LOOP)
-\ RSP+08: ESP+4:  old index                   (incremented by LOOP)
-\ RSP+00: return address
-\ R15:    new index-limit-xorbit63
-\ R14:    new index
-        pop     %rdx	\ return address and discard it
-        pop	%r14	\ index
-        pop	%r15	\ index-limit-xorbit63
-	NEXT
-END-CODE
-
-
-CODE UNLOOP
-\ RSP+18: ESP+C:  exit address
-\ RSP+10: ESP+8:  old index-limit-$8000.0000  (incremented by LOOP)
-\ RSP+08: ESP+4:  old index                   (incremented by LOOP)
-\ RSP+00: return address
-\ R15:    new index-limit-xorbit63
-\ R14:    new index
-        pop     %rdx	\ return address and discard it
-        pop	%r14	\ index
-        pop	%r15	\ index-limit-xorbit63
-	pop	%rcx
-	jmp	%rdx
-END-CODE
-
-\EOF
-CODE J
-	DUP,
-	mov	8(%rsp),%rax
-	NEXT
-END-CODE
