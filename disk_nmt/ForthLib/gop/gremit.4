@@ -2,13 +2,14 @@
 \ gDispArray1  VALUE GR_BASE_ADDRES
 14 CONSTANT VSHRIFT@
 
-\ 1280 			constant GR_WIDTH 	\
-\ 800	 		constant GR_HEIGHT  	\
- GR_WIDTH 4* 		constant BYTESLED	\
- GR_WIDTH 8 / 1-	constant MAXCURX 	\
- GR_HEIGHT VSHRIFT@ / 2/ 1-      constant MAXCURY 	\
- BYTESLED GR_HEIGHT *     constant BYTESSCREEN	\
-\-  shrift variable SHRIFT 			\
+
+\ 1280 			constant GR_WIDTH
+\ 800	 		constant GR_HEIGHT
+ GR_WIDTH 4* 		constant BYTESLED
+ GR_WIDTH 8 / 1-	constant GMAXCURX
+ GR_HEIGHT VSHRIFT@ / 2/ 1-      constant MAXCURY
+ BYTESLED GR_HEIGHT *     constant BYTESSCREEN
+\-  shrift variable SHRIFT
 
 CREATE shrift screen_koi8 ,
 
@@ -130,7 +131,7 @@ CREATE CURSOR% 2 ,
 \ .s cr \ key drop
 	BytesLed +loop drop
 
-	GETX  MAXCURX U<
+	GETX  GMAXCURX U<
 	IF   GETX 1+ TO GETX
 	ELSE GRCR
 	THEN
