@@ -140,6 +140,7 @@ FLOAD ForthLib\rus\rkey.4th
 : UZtest BEGIN BEGIN DUP  UZEMIT DUP 2 COLOR!  H.  3 COLOR! 1+ DUP $3F AND 0= UNTIL  KEY BL = UNTIL ;
 
 REQUIRE DIR ForthLib\tools\dir.4th 
+REQUIRE FCOPY ForthLib\tools\fcopy.4th 
 REQUIRE NC ForthLib\tools\NNC.4th
 
 
