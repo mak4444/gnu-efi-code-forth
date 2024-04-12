@@ -141,9 +141,14 @@ FLOAD ForthLib\rus\rkey.4th
 
 REQUIRE DIR ForthLib\tools\dir.4th 
 REQUIRE FCOPY ForthLib\tools\fcopy.4th 
+
+[IFNDEF] DELETE-FILE
+: DELETE-FILE ( c-addr u -- ior )
+  R/W OPEN-FILE DUP IF BREAK DROP
+  VOLUME F_Delete @ 1XSYS ;
+[THEN]
+
 REQUIRE NC ForthLib\tools\NNC.4th
-
-
 REQUIRE EFICALL ForthLib\lib\eficall.4th 
 
 
@@ -157,17 +162,16 @@ REQUIRE EFICALL ForthLib\lib\eficall.4th
 ." NC - file manager"  CR
 ; ->DEFER HELP              
 
+LASTSTP: KETST
+LASTSTP: : KETST BEGIN KEYEX DUP h. KEYDATA KeyShiftState L@ h.  $20 OR 'q' = UNTIL ;
  LASTSTP: fload work\asmtst.4th 
  LASTSTP: ' GCCOUTPUTRESET DISA 
 LASTSTP: EFICALL RedHatBin\bltgrid.efi
-LASTSTP: KETST
-LASTSTP: : KETST BEGIN KEYEX DUP h. KEYDATA KeyShiftState L@ h.  $20 OR 'q' = UNTIL ;
 LASTSTP: e> see 
 LASTSTP: DIR ForthSrc 
 LASTSTP: CUR_DIR 44 dump
 LASTSTP: BASETXT_MOD
 LASTSTP: GEMIT_MOD
-LASTSTP: CLIPBOARD
 LASTSTP: nc
 
 .( TRY) CR
