@@ -58,7 +58,6 @@
   SYSTAB *BootServices @ CONSTANT BOOTSERV
   SYSTAB ST*ConOut @ IO*Mode CONSTANT TEXTOUTPUTMODE
 
-
 [IFDEF] GETMAXXY0
  GETMAXXY0
  [IF]  2DROP
@@ -66,10 +65,9 @@
  [THEN]
 [THEN]
 
-
 \- ROWS 25 CONSTANT ROWS
 \- COLS 80 CONSTANT COLS
-\- MAXCURY ROWS CONSTANT MAXCURY
+\- MAXCURY ROWS 1- CONSTANT MAXCURY
 \- MAXCURX COLS 1- CONSTANT MAXCURX 
 
 1 \ TEXTOUTPUTMODE tm.CursorRow 0=
@@ -123,9 +121,7 @@ FLOAD ForthLib\rus\rkey.4th
 
  REQUIRE CO ForthLib\tools\acc.4th CO
 
-
  REQUIRE VIEW ForthLib\tools\view.4th 
-
 
 : PAGE   SYSTAB ST*ConOut @  DUP ClearScreen @ 1XSYS DROP ;
 
@@ -152,7 +148,6 @@ REQUIRE FCOPY ForthLib\tools\fcopy.4th
 REQUIRE NC ForthLib\tools\NNC.4th
 REQUIRE EFICALL ForthLib\lib\eficall.4th 
 
-
 :NONAME
 ." WORDS -  List the definition names" CR
 ." EDIT ( <filename> ) - text editor" CR
@@ -174,6 +169,7 @@ LASTSTP: CUR_DIR 44 dump
 LASTSTP: BASETXT_MOD
 LASTSTP: GEMIT_MOD
 LASTSTP: nc
+LASTSTP: e> setxy
 
 .( TRY) CR
 .( SEE ABS) CR
