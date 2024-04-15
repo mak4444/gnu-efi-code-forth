@@ -162,14 +162,12 @@ P: lgs,
 
 \ P: btr,
 
-
 P: rol,
 P: ror,
 P: rcl,
 P: rcr,
 P: shl,
 P: shr,
-P: shl,
 P: sar,
 
 P: rolb,
