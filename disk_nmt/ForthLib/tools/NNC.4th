@@ -236,6 +236,9 @@ DIR_NAME_S 0!
 \+ $EDIT	KEY2_F4 OF >R 2>R COUNT_NAME COUNT $EDIT	2R> R> FMTABDO FMTABDO ENDOF
   KEY2_F4 CTL+ OF >R 2>R S" REE" EVALUATE		2R> R> NCDDDD ENDOF
   KEY2_F1 OF 
+  CR ." ctrl-o - nc/console swich"
+  CR ." ctrl-e - previous line"
+  CR ." ctrl-x - ctrl-e undo"
   CR ." f4 - edit"
   CR ." f4-ctrl - last file edit continue"
   CR ." f5 - file copy"
