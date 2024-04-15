@@ -1,4 +1,3 @@
-REQUIRE GASM64_MOD ~mak\ARM7\SRC\gasm64.4th
 
 MODULE: GASM64_MOD
 
@@ -162,14 +161,12 @@ P: lgs,
 
 \ P: btr,
 
-
 P: rol,
 P: ror,
 P: rcl,
 P: rcr,
 P: shl,
 P: shr,
-P: shl,
 P: sar,
 
 P: rolb,
