@@ -220,14 +220,10 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
 : REX,
   REX.RBX
-\ MO_TST_VAL-ON
  DUP 7 U>
 	IF    -333 THROW THEN
-\ MO_TST_VAL-Off
-\ CR ." REX20=" .S KEY DROP
  #(%r_x,%r_x)		IF TAB_(r,r)	+ C@ THEN
  #(%r_x),%r_x 
-\ CR ." REX40=" .S KEY DROP
   	IF TAB_(r)r	+ C@ THEN
  #(%r_x,%r_x),%r_x	IF TAB_(r,r)r	+ C@ THEN
  #%r_x,(%r_x)		IF TAB_r(r)	+ C@ THEN
@@ -239,7 +235,6 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 : ?OSIZE, OSIZE IF $66 C, 0 TO OSIZE THEN ;
 
 : ?REX,  ?OSIZE,  REX@ IF REX, THEN  ;
-
 
 : DO|;  ( cod -- )
  ?REX,
@@ -311,7 +306,6 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 : rsm     	$aa0f W, ;
 : ud1     	$b90f W, ; 
 
-
 : cltq		$9848 W, ;               	
 : cqto		$9948 W, ;               	
 : lretq		$cb48 W, ;               	
@@ -335,7 +329,6 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
 : endbr64    $fa1e0ff3 L, ;
 
-
 : not_  ( c -- cod )
   ?REX,  $f6 REG>8 OR C, ;
 
@@ -357,7 +350,6 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 	BREAK	$80 OR OVER DO|; 4 = IF $24 C, THEN ((OFFSET L,
   BREAK
      OVER DO|; 4 = IF $24 C, THEN
-\ CR ." ((22=)" .S KEY DROP
  BREAK
  #(%r_x,%r_x) 
  IF	2 PICK 5 = \ %rbp
@@ -417,12 +409,9 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
 : SET,
 	$f C, C,
-  #%r_x
-\ CR ." SET00=" .S KEY DROP
-	IF \ REG>8 IF -333 THROW THEN
+  #%r_x	IF \ REG>8 IF -333 THROW THEN
  $C0 DO|; BREAK
   0 (()), ;
-
 
 : seto, 	$90 SET, ;
 : setno,	$91 SET, ;
@@ -448,7 +437,6 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
   8 OR INCL, ;
 : INCQ, 	$8 TO REX_W incl, ;
 : DECQ, 	$8 TO REX_W decl, ;
-
 
 : POP,  REX.RBX ?DUP IF $40 OR C, THEN
     #%r_x IF 0 TO  REX.RBX  0 TO  REX_W  $58 DO|; break
@@ -599,7 +587,7 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 : cmovl, 	$4c CMOV| ;
 : cmovge,	$4d CMOV| ;
 : cmovle,	$4e CMOV| ;
-: cmovg, 	$4f CMOV| ;
+\ : cmovg, 	$4f CMOV| ;
 
 : cmovg, ?REX, $f C, 0x4C ADD| ;
 : cmova, ?REX, $f C, 0x44 ADD| ;
@@ -639,13 +627,10 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
 \ : btr,	$f C, $b3 CMOV| ;
 
-
 : xchg,
-
   #%r_x,%r_x		IF DUP	0= IF DROP	$90 DO|; BREAK
 			   OVER	0= IF NIP	$90 DO|; BREAK
-				0x86 ADD|  BREAK
-
+			0x86 ADD|  BREAK
   #%r_x,(%r_x)		IF 0x86 ADD|  BREAK
   #%r_x,(%r_x,%r_x)	IF 0x86 ADD|  BREAK 
 
@@ -654,7 +639,6 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 
 \  #%r_x,(%r_x)		IF SWAP ['] #(%r_x),%r_x	>PARM 0x84 ADD| BREAK
 \  #%r_x,(%r_x,%r_x)	IF  ROT ['] #(%r_x,%r_x),%r_x	>PARM 0x84 ADD| BREAK 
-
   -333 THROW
  ;
 
@@ -686,13 +670,10 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
  ;
 
 : lea,
-
   #(%r_x),%r_x		IF SWAP [']  #%r_x,(%r_x)	>PARM 0x8C ADD|  BREAK
   #(%r_x,%r_x),%r_x	IF -ROT [']  #%r_x,(%r_x,%r_x)	>PARM 0x8C ADD|  BREAK 
   #(%rip),%r_x		IF	[']  #%r_x,(%rip)	>PARM 0x8D ADD|  BREAK
-
-  -333 THROW
- ;
+  -333 THROW ;
 
 
 : SH,	?REX,
@@ -700,14 +681,10 @@ CREATE TAB_r(r,r)	0 C, 2 C, 1 C, 3 C, 4 C, 6 C, 5 C, 7 C,
 	#$,%r_x	IF	$C0 REG>8 OR C, DO|; C,	BREAK
 	#%r_x,%r_x
 		IF 	ROT ['] %cl >BODY @ <> IF -3333 THROW THEN
-\			$777777777 L,
 			$D2 REG>8 OR C, DO|;	BREAK
-
  #$,(%r_x)	IF	$C0 REG>8 OR C,	['] #(%r_x)		>PARM $3F AND (()), C,    BREAK
  #$,(%r_x,%r_x)	IF	$C0 REG>8 OR C,	['] #(%r_x,%r_x)	>PARM $3F AND (()), C,    BREAK
-
-  -333 THROW
-;
+  -333 THROW ;
 
 : rol, $c0 SH, ;
 : ror, $c8 SH, ;
@@ -951,4 +928,3 @@ EXPORT
 FLOAD ForthLib/asm/lex.4th 
 FLOAD ForthLib/asm/prefix.4th 
 
-\  68 cc da 40 00       	push   $0x40dacc
