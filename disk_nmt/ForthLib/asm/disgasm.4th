@@ -108,9 +108,7 @@ REQUIRE MODULE: ForthLib\ext\spf_modules.4th
 \+ CASE-INS CASE-INS ON
 \- HEX. : HEX. H. ;
 \- \G : \G POSTPONE \ ; IMMEDIATE
-
 [THEN]
-
 
 [IFNDEF] BASE-EXECUTE
 : BASE-EXECUTE ( i*x xt u -- j*x ) \ gforth
@@ -381,7 +379,6 @@ DEFER .0FCD
 : .IGRV //.  CODNAME.  .IMM64 ., OPCODE @ 7 AND  .S/REG   ;
 
 : .IGRB  2 LENGTH ! .IGRV ;
-\ : .IGR   .B? .GR ., ." .IGR.IMM" .IMM ;
 : .IGR .B? CODNAME. .IMM ., 0 .R/REG ;
 : .MODB  .B? CODNAME. .RMOD ;
 
@@ -897,7 +894,6 @@ EXPORT
 
 : INST  ( ADR -- ADR' )
         DUP TO NEXT-INST
-\  TR_FLG IF DUP ." ( "  HEX. ." ) "  DUP @ H.  CR .S CR KEY DROP  THEN
   DUP   REX OFF LEN! .MCODE \ disline
   DUP ROT TAB ." # " DUP H.
   //WAS
@@ -914,8 +910,7 @@ EXPORT
 	THEN  0 TO //WAS
   ELSE     ?DO	I C@ H.  LOOP
   THEN
-\  TR_FLG IF DUP CR ." ( "  HEX. ." ) "  DUP @ H.  CR .S CR KEY DROP  THEN
-   STRBYTE? \ ." S?" DUP .
+   STRBYTE?
   IF CR TAB ." .byte 0x"  COUNT DUP H.-
  	0 ?DO ." ,0x" COUNT  H.- LOOP
 
@@ -928,7 +923,6 @@ EXPORT
   XDO?
   IF  1+ CR TAB ." push	$"  DUP L@ ?.NAME>S 4 +	0 TO XDO?
   THEN
-
 ;
 
 : DISA ( assr - addr )
@@ -937,18 +931,11 @@ EXPORT
    KEY $20 OR 'q' =  \ Esc
  UNTIL
 ;
-
  
 : MINST_ ( [INST] -- [INST'] )
-  DUP  C@
+  DUP  C@ 9 EMIT ." .inst 0x"  H.- 1+ ;
  
- 9 EMIT ." .inst 0x"    H.-
- 1 +
-  ;
-
- 
-: H.H C@ 2 H.N SPACE ;
-
+\- H.H : H.H C@ 2 H.N SPACE ;
 
 : SMINST ( [INST] -- [INST+x] )
 \    DUP H.
