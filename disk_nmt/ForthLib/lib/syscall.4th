@@ -2,8 +2,7 @@
 CODE 1XSYS
 	mov    (%rbp),%rcx
 
-        mov     %rsp, %rbx
-	and	$0xf, %rbx
+	test	$8, %rsp
         je      0f
 
 	sub    $0x28,%rsp
@@ -25,8 +24,7 @@ CODE 2XSYS
 	mov    8(%rbp),%rdx
 	mov    (%rbp),%rcx
 
-        mov     %rsp, %rbx
-	and	$0xf, %rbx
+	test	$8, %rsp
         je      0f
 
 	sub    $0x28,%rsp
@@ -48,8 +46,7 @@ CODE 3XSYS
 	mov    8(%rbp),%rdx
 	mov    (%rbp),%rcx
 
-        mov     %rsp, %rbx
-	and	$0xf, %rbx
+	test	$8, %rsp
         je      0f
 
 	sub    $0x28,%rsp
@@ -71,8 +68,7 @@ CODE 4XSYS
 	mov    8(%rbp),%rdx
 	mov    (%rbp),%rcx
 
-        mov     %rsp, %rbx
-	and	$0xf, %rbx
+	test	$8, %rsp
         je      0f
 
 	sub    $0x28,%rsp
@@ -94,8 +90,7 @@ CODE 5XSYS
 	mov    8(%rbp),%rdx
 	mov    (%rbp),%rcx
 
-        mov     %rsp, %rbx
-	and	$0xf, %rbx
+	test	$8, %rsp
         je      0f
 
 	sub    $0x48,%rsp
@@ -123,8 +118,7 @@ CODE 6XSYS
 	mov    8(%rbp),%rdx
 	mov    (%rbp),%rcx
 
-        mov     %rsp, %rbx
-	and	$0xf, %rbx
+	test	$8, %rsp
         je      0f
 
 	sub    $0x48,%rsp
