@@ -221,7 +221,6 @@ CREATE LT  $0A0A0A0A ,
   BEGIN WCOUNT DUP
   WHILE  [CHAR] / = IF [CHAR] \ OVER 2- C! THEN
   REPEAT 2DROP
-
 ;
 
 : >EFIFILENAME0 ( adr1 len adr -- adr ) ASCII-UZ Z/TO\ ; 
@@ -289,7 +288,6 @@ VARIABLE ID_SHIFT
 : QUERY	( -- )
 	TIB 180 ACCEPT #TIB !
 	0 >IN !  0 SOURCE + C! ;
-
 
 : OK..  ." OK" CR ;
 ' OK.. ->DEFER OK.
@@ -403,8 +401,6 @@ T: S, ( addr u -- )
 T: S", ( addr u -- ) 
   >S", CMOVE ;
 
-
-
 T: SLIT, ( adr len -- [ adr len ] )
 	['] (S") _COMPILE, S",
 \	HERE 1 AND IF 0 C, THEN
@@ -433,9 +429,6 @@ T: ABORT"
 ;
 
 : WORD ( char "<chars>ccc<char>" -- c-addr ) \ 94
-\  DUP PSKIP PARSE 255 MIN
-\  DUP PAD C! PAD 1+ SWAP CMOVE
-\  0 PAD COUNT + C!
   PARSE PAD $!  PAD ;
 
 : CLIT,
@@ -502,7 +495,6 @@ T: ELSE   ( BO BI ADDR ? -- 0 0 ADDR1 ?1 )
 
 T: WHILE  [COMPILE] IF  CS-SWAP ; IMMEDIATE
 T: REPEAT [COMPILE] AGAIN [COMPILE] THEN ; IMMEDIATE
-
  
 T: DO            \ Run: n1|u1 n2|u2 -- ; R: -- loop-sys           6.1.1240
 \ *G Begin a *\fo{DO ... LOOP} construct. Takes the end-value and
@@ -575,9 +567,7 @@ T: I
 : SET-CURRENT ( wid -- ) \ 94 SEARCH
   CURRENT ! ;
 
-
 0 VALUE YDP_FL
-\ : YDP_FL  &YDP_FL @ ;
 VARIABLE YDP
 VARIABLE YDP0
 
@@ -586,7 +576,7 @@ VARIABLE YDP0
   YDP ! DP ! ;
 
 : ?YDP><DP
- YDP_FL \ IS-TEMP-WL 0= AND
+ YDP_FL
  IF YDP><DP
  THEN ;
 
@@ -595,6 +585,7 @@ VARIABLE YDP0
 VARIABLE LAST-CFA
 CREATE WARNING 1 ,
 CREATE NEEDUNIQUE  0 ,
+' NOOP ->DEFER CFA_ALIGN
 
 : SBUILD ( addr u -- )
   ?YDP><DP
@@ -610,8 +601,8 @@ CREATE NEEDUNIQUE  0 ,
 	 CURRENT @ @ ,
 	HERE LAST !
 	S", 
-	ALIGN
 	?YDP><DP
+	CFA_ALIGN
     HERE SWAP ! ( ......... cfa )
 ;
 
@@ -769,7 +760,6 @@ VARIABLE RP0
 	0 ,
 \ Make a new wordlist and give its address.
 ;
-
 
 T: VOCABULARY ( "<spaces>name" -- )
   WORDLIST
