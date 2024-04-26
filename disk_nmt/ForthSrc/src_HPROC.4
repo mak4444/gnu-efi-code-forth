@@ -3,12 +3,10 @@
 \- DOCONSTANT	: DOCONSTANT	R> @ ;
 \- DOVALUE	: DOTVALUE	R> @ ;
 \- DOVECT 	: DOVECT	R> PERFORM ;
-\- DOFIELD	: DOFIELD	R> L@ + ;
 
 ' DOCONSTANT TO 'DOCONSTANT
 ' DOVALUE TO 'DOVALUE
 ' DOVECT TO 'DOVECT
-' DOFIELD TO 'DOFIELD
 
 VARIABLE SP0
 VARIABLE &INPUT
@@ -60,7 +58,15 @@ T: C, THERE C! 1 ALLOT ;
 
 T: HALIGNED  1+  1 ANDC ;
 T: IALIGNED  3 + 3 ANDC ;
-T: ALIGNED   7 + 7 ANDC ;
+T: QALIGNED  7 + 7 ANDC ;
+
+CREATE ALIGN-BYTES 8 ,
+
+T: ALIGNED ( addr -- a-addr ) \ 94
+\ a-addr - первый выровненный адрес, больший или равный addr.
+  ALIGN-BYTES @ DUP 0= IF 1+ DUP ALIGN-BYTES ! THEN
+  2DUP
+  MOD DUP IF - + ELSE 2DROP THEN ;
 
 : (S")  ( --- c-addr u )
 \ Runtime part of S"
