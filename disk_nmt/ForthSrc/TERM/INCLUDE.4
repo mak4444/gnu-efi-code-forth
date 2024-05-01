@@ -1,11 +1,7 @@
 
 1 VALUE R/O ( -- fam ) \ 94 FILE
-\ fam - 
-\ 
 
 2 VALUE W/O ( -- fam ) \ 94 FILE
-\ fam - 
-\ 
 
 3 VALUE R/W ( -- fam ) \ 94 FILE
 
@@ -17,25 +13,19 @@ CURFILENAME $! ;
  CURFILENAME COUNT + CURFILENAME
  CFNAME_SIZE CURFILENAME C@ - 255 +  CMOVE ;
 
-\ : VVV #H. >PF >DPF ;
-
 : INCLUDE-FILE ( i*x fileid -- j*x ) \ 94 FILE
-\	." INC"
 	>IN  @ >R
 	CURSTR @ >R CURSTR 0!
 	SOURCE-ID >R  TO SOURCE-ID
-\	CR RP@ 6 >> $F AND SPACES ." save=<" SOURCE TYPE ." >"
 	SOURCE
-	RP@ OVER ALIGNED - RP!
+	RP@ OVER QALIGNED - RP!
 	RP@ SWAP CMOVE
 	SOURCE 2>R 
 	['] FQUIT CATCH	SAVEERR	
 	DUP  IF cr ." in <" CURFILENAME COUNT TYPE ." >:" CURSTR @ . THEN \	['] NOOP CATCH	SAVEERR	
 	2R> SOURCE!
 	RP@ SOURCE CMOVE
-\	CR ." IF=<" SOURCE TYPE ." >"
-	RP@ SOURCE NIP ALIGNED + RP!
-\	CR RP@ 6 >> $F AND SPACES ." rest=<" SOURCE TYPE ." >"
+	RP@ SOURCE NIP QALIGNED + RP!
 	R> TO SOURCE-ID
 	R> CURSTR !
 	R> >IN ! THROW  
@@ -52,7 +42,6 @@ T: }VIEW
    HERE  VIEW_LINK , TO VIEW_LINK -1 ,
    CURFILENAME COUNT S",
 ?YDP><DP
-
 ;
 
 T: INCLUDED  ( c-addr u ---- )
@@ -64,12 +53,9 @@ T: INCLUDED  ( c-addr u ---- )
 	R@ ['] INCLUDE-FILE
 	CATCH
 	}VIEW
-\	CR RP@ 8 + 6 >> $F AND SPACES  ." FROM <" CURFILENAME COUNT TYPE ." >"  DUP . 
 	CFNAME-FREE
 	R> CLOSE-FILE DROP
 	THROW
 ;
 
-
 : FLOAD  PARSE-NAME INCLUDED ;
-
