@@ -24,7 +24,7 @@
 	*FIELD EnableCursor
 
     \ Current mode
-	@FIELD IO*Mode
+	*FIELD IO*Mode
   CONSTANT /SIMPLE_TEXT_OUTPUT_INTERFACE
 
 
