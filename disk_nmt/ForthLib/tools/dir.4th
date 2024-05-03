@@ -55,7 +55,7 @@ CREATE CUR_DRIVE 0 ,
 	BOOTSERV HandleProtocol @ 3XSYS
 ;
 
-CREATE CUR_ROOT 0 ,
+\- CUR_ROOT CREATE CUR_ROOT 0 ,
 
 : OPEN-VOLUME ( -- flg )
 	CUR_ROOT
@@ -84,12 +84,14 @@ CREATE CUR_ROOT 0 ,
 
 : CD PARSE-NAME $CHDIR ;
 
+[IFNDEF] UZSIM_OPEN-FILE
 : UZSIM_OPEN-FILE ( uzadr fam -- fid flg )
 	0 SWAP ROT \ 0 fam uzadr
 	0 >R RP@
 	CUR_ROOT @ 
 	VOLUME F_Open @ 5XSYS R> SWAP
 ;
+[THEN]
 
 : CD-OPEN-FILE ( c-addr u fam -- fileid ior )
  3DUP >R 2>R
