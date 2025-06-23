@@ -2,19 +2,14 @@
 
 CODE TEST333
 
-
 \  add   (%rax,%rax,2),%edx
-
 
 	POP %r8
 	POP %rAX
 
 \	$f2 c, $f c, $10 c, 07 c,
 
-
 END-CODE
-
-\ EOF
 
 CODE test3330
 
@@ -36,7 +31,6 @@ END-CODE
 CREATE test3331
  $0f C, 00  C, $c0 C,
  $0f C, 01  C, $c0 C,
-
 
 \ Push the address of the top element of the return stack 
 \ onto the parameter stack.
@@ -66,7 +60,6 @@ CODE RP!	( N -- )
 	lea    0x8(%rbp),%rbp
 	jmp	%rbx
 END-CODE
-
 
 CODE 2RDROP
 	mov	(%rsp),%rbx
@@ -166,7 +159,6 @@ CODE W@		( A -- c )
 	NEXT
 END-CODE
 
-
 \ Store the least significant 8 bits of char at the specified addr
 CODE C!		( N,A -- )
 	mov    0x0(%rbp),%dl
@@ -175,7 +167,6 @@ CODE C!		( N,A -- )
 	lea    0x10(%rbp),%rbp
 	NEXT
 END-CODE
-
 
 CODE W!	( N,A -- )
 	mov    0x0(%rbp),%edx
@@ -192,7 +183,6 @@ CODE L!	( N,A -- )
 	lea    0x10(%rbp),%rbp
 	NEXT
 END-CODE
-
 
 \  Store value n into the address addr
 CODE !	( N,A -- )
@@ -980,25 +970,69 @@ END-CODE
 
 CODE KEY1
 	DUP,
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
+
 	call   ' getch
+
+	pop	%rbp
+
 	NEXT
 END-CODE
 
 CODE KEY2
 	DUP,
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
+
 	call   ' getkey
+
+	pop	%rbp
+
 	NEXT
 END-CODE
 
 CODE KEY?1
 	DUP,
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
+
 	call   ' kbhit
+
+	pop	%rbp
+
 	NEXT
 END-CODE
 
 CODE COLOR!0
 	mov    %eax,%edi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
+
 	call   ' GCCSetAttribute
+
+	pop	%rbp
+
 	DROP,
 	NEXT
 END-CODE
@@ -1034,7 +1068,16 @@ END-CODE
 
 CODE TEXT_OUTPUT_MODE
 	DUP,
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' GCCTEXT_OUTPUT_MODE
+	pop	%rbp
+
 	NEXT
 END-CODE
 
@@ -1052,7 +1095,16 @@ CODE READ-FILE ( c-addr u1 fileid -- u2 ior )
         mov    8(%rbp),%rdx
         lea    (%rbp),%esi
         mov    %eax,%edi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' GCCReadFile
+	pop	%rbp
+
         mov    (%rbp),%edx
         mov    %edx,8(%rbp)
 	lea    0x8(%rbp),%rbp
@@ -1064,7 +1116,17 @@ CODE WRITE-FILE ( c-addr u1 fileid -- ior )
         mov    8(%rbp),%rdx
         lea    (%rbp),%esi
         mov    %eax,%edi
+
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' GCCWriteFile
+	pop	%rbp
+
 	lea    0x10(%rbp),%rbp
 	NEXT
 END-CODE
@@ -1073,7 +1135,16 @@ CODE FILE-POS ( fileid -- u ior )
 	lea    -8(%rbp),%rbp
 	mov    %eax,%edi
 	lea    (%rbp),%rsi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' GCCGetPosition
+	pop	%rbp
+
 	NEXT
 END-CODE
 
@@ -1081,7 +1152,16 @@ CODE FILE-POSITION ( fileid -- ud ior )
 	lea    -0x10(%rbp),%rbp
 	mov    %eax,%edi
 	lea    8(%rbp),%rsi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' GCCGetPosition
+	pop	%rbp
+
 	mov    $0,(%rbp)
 	NEXT
 END-CODE
@@ -1089,7 +1169,16 @@ END-CODE
 CODE REPOS-FILE ( u fileid -- ior ) 
 	mov    %eax,%edi
 	mov    (%rbp),%rsi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' GCCSetPosition
+	pop	%rbp
+
 	lea     8(%rbp),%rbp
 	NEXT
 END-CODE
@@ -1102,14 +1191,18 @@ END-CODE
 
 CODE CLOSE-FILE ( fileid -- ior )
 	mov    %eax,%edi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' GCCCloseFile
+	pop	%rbp
+
 	xor	%eax,%eax
 	NEXT
-	NEXT
-END-CODE
-
-
-CODE ZDELETE-FILE
 	NEXT
 END-CODE
 
@@ -1119,7 +1212,16 @@ END-CODE
 
 CODE ALLOCATE ( u -- a-addr ior ) 
 	mov    %eax,%edi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' AllocatePool
+	pop	%rbp
+
 	DUP,
 	xor	%eax, %eax
 	NEXT
@@ -1128,7 +1230,16 @@ END-CODE
 
 CODE FREE ( u --  ior ) 
 	mov    %eax,%edi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' FreePool
+	pop	%rbp
+
 	NEXT
 END-CODE
 
