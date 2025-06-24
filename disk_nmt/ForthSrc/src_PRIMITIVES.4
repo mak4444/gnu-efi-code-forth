@@ -1062,7 +1062,17 @@ CODE GETMAXXY0 ( -- x y flg )
 	mov	%rax,0x10(%rbp)
 	lea    8(%rbp),%rsi
 	lea    (%rbp),%rdi
+
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call	' GCCSCRSIZE
+	pop	%rbp
+
 	NEXT
 END-CODE
 
@@ -1087,7 +1097,16 @@ CODE UZOPEN-FILE ( u16<name>  fam -- fileid ior )
 	mov    %rax,%rdx
 	mov    (%rbp),%rsi
 	lea    (%rbp),%rdi
+
+        mov     %rsp, %rbx
+	and	$0xf, %rbx
+        jne      0f
+	push	&NOOP (%rip)   // for mmx
+0:	push	%rbp
+	mov     %rsp, %rbp
 	call   ' GCCOpenFile
+	pop	%rbp
+
 	NEXT
 END-CODE
 
