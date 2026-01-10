@@ -92,7 +92,7 @@ install:
 		    -j .areloc -j .reloc $(FORMAT) $*.so $@
 
 %.so: %.o
-	$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBES)
+	$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBES) -z execstack
 
 %.o: %.c
 	$(CC) $(INCDIR) $(CFLAGS) -fno-inline-functions $(CPPFLAGS) -c $< -o $@
